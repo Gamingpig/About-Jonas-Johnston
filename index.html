@@ -75,13 +75,17 @@
 
         /* --- Music Dashboard spezifische Styles --- */
         
-        /* IMMER dunkler Glass-Look NUR für das große Dashboard, ignoriert den Light-Mode knallhart! */
+        /* IMMER dunkler Glass-Look NUR für das Haupt-Dashboard */
         #main-music-card {
             background: rgba(15, 23, 42, 0.8) !important;
             border-color: rgba(255, 255, 255, 0.1) !important;
         }
         
-        /* Zwingt alle Texte im Dashboard IMMER auf Weiß, da der Hintergrund dunkel bleibt */
+        /* Dynamische Breite für Lyrics */
+        #main-music-card.lyrics-open {
+            max-width: 600px !important;
+        }
+        
         #main-music-card #track-title {
             color: #ffffff !important;
         }
@@ -90,7 +94,7 @@
         }
 
         #main-music-card {
-            transition: transform 0.1s linear, box-shadow 0.4s ease; /* Schnelle Transition für flüssigen 3D Effekt */
+            transition: transform 0.1s linear, box-shadow 0.4s ease, max-width 0.5s cubic-bezier(0.2, 1, 0.3, 1);
         }
         
         #ambient-bg {
@@ -111,7 +115,6 @@
             animation: ambient-drift 15s infinite alternate ease-in-out; 
         }
 
-        /* Extra Schatten, falls das Ambient Licht zu stark wird */
         .playing #track-title,
         .playing #track-artist { 
             text-shadow: 0 4px 16px rgba(0,0,0,0.8); 
@@ -122,16 +125,10 @@
             100% { transform: scale(1.3) translate(-10px, 10px); }
         }
 
-        #media-container {
-            transition: transform 0.4s ease;
-        }
-
-        #media-container:hover { transform: scale(1.03); }
+        #media-container { transition: transform 0.4s ease; }
         #media-container:active { transform: scale(0.97); }
-
         #artwork { transition: opacity 0.5s ease; opacity: 1; }
         
-        /* Gnadenloses Verstecken des Mondes im Play Modus */
         #offline-icon { 
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
             opacity: 0; 
@@ -150,33 +147,77 @@
         
         .offline#main-music-card { border-color: rgba(59, 130, 246, 0.3) !important; }
 
+        /* Steuerelemente bei Offline restlos ausblenden */
+        .offline #progress-container,
+        .offline #controls-container { 
+            display: none !important; 
+        }
+
         @keyframes pulse-dot { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.5; } }
         .active-dot { animation: pulse-dot 2s infinite; }
 
-        /* Modal Animationen */
+        /* Lyrics UI Animationen */
+        .lyrics-open #lyrics-overlay {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .lyric-line {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25em;
+            margin: 1.5rem 0;
+            line-height: 1.2;
+            transition: opacity 0.3s ease;
+        }
+        
+        /* Unscharf machen der inaktiven Zeilen für einen cooleren Fokus-Effekt */
+        .lyrics-open .lyric-line { opacity: 0.4; filter: blur(1px); }
+        .lyrics-open .lyric-line.active { opacity: 1; filter: blur(0px); }
+
+        .lyric-word {
+            position: relative;
+            display: inline-block;
+            background: linear-gradient(to right, #ffffff var(--fill-percent, 0%), rgba(255,255,255,0.2) var(--fill-percent, 0%));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            will-change: background-size;
+            font-size: 1.75rem;
+            font-weight: 800;
+        }
+
+        .mask-image-gradient {
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
+            mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
+        }
+
+        #lyrics-overlay {
+            overflow: hidden;
+        }
+
+        #lyrics-container::-webkit-scrollbar { width: 4px; }
+        #lyrics-container::-webkit-scrollbar-track { background: transparent; }
+        #lyrics-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+
         #modal-overlay {
             backdrop-filter: blur(16px);
             transition: all 0.4s ease;
         }
-
         .modal-content {
             transform: translateY(20px) scale(0.95);
             opacity: 0;
             transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-
         .modal-open .modal-content {
             transform: translateY(0) scale(1);
             opacity: 1;
         }
 
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb {
-            background: #3b82f6;
-            border-radius: 10px;
-        }
+        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen selection:bg-blue-500/30">
@@ -201,18 +242,13 @@
             <button id="close-modal" class="absolute top-6 right-6 p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-blue-500 transition-all">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
             </button>
-            <div id="modal-body">
-                <!-- Content injected via JS -->
-            </div>
+            <div id="modal-body"></div>
         </div>
     </div>
 
-    <!-- Padding-top pt-40 für mehr Gesamtabstand nach oben -->
     <main class="max-w-4xl mx-auto px-8 pt-40 pb-32">
         
-        <!-- HEADER 1 (Pflicht) -->
         <header class="mb-20 reveal">
-            <!-- Abstand mb-16 für deutlich mehr Luft zum Text -->
             <div class="inline-flex items-center gap-2 px-3 py-1 mb-16 text-xs font-bold tracking-widest text-blue-600 uppercase bg-blue-100 dark:bg-blue-500/10 dark:text-blue-400 rounded-full">
                 <span class="relative flex h-2 w-2">
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
@@ -220,7 +256,6 @@
                 </span>
                 Systems Integration
             </div>
-            <!-- py-2 hinzugefügt, damit das Ü oben nicht durch den Gradient-Clip abgeschnitten wird -->
             <h1 class="text-5xl md:text-7xl font-extrabold mb-8 py-2 tracking-tighter bg-gradient-to-br from-slate-900 via-slate-800 to-slate-600 dark:from-white dark:via-slate-200 dark:to-slate-400 bg-clip-text text-transparent leading-tight">
                 Über Jonas Johnston
             </h1>
@@ -232,7 +267,6 @@
             </p>
         </header>
 
-        <!-- HEADER 2 (Pflicht) -->
         <section class="mb-24 reveal">
             <h2 class="text-3xl font-bold mb-10 text-blue-600 dark:text-blue-500 border-b-4 border-blue-600 dark:border-blue-500 pb-3 inline-block">
                 Real Talk: Ausbildung, Alltag & alles, was zählt
@@ -280,15 +314,14 @@
             </div>
         </section>
 
-        <!-- NEU: MUSIC DASHBOARD INTEGRATION -->
-        <section class="mb-24 reveal">
+        <!-- MUSIC DASHBOARD INTEGRATION -->
+        <section class="mb-24 reveal relative">
             <h2 class="text-3xl font-bold mb-10 text-blue-600 dark:text-blue-500 border-b-4 border-blue-600 dark:border-blue-500 pb-3 inline-block">
                 Was bei mir gerade läuft
             </h2>
             
             <!-- Mini-Player Toggle Button -->
             <div id="mini-player-toggle" onclick="toggleDashboard()" class="glass-card w-full max-w-[400px] mx-auto p-4 rounded-[2rem] flex items-center justify-between cursor-pointer group mb-6 relative z-20 hover:scale-[1.01] hover:shadow-xl transition-all">
-                <!-- Flex-Container für sauberes Wrappen langer Texte -->
                 <div class="flex items-center gap-4 flex-1 min-w-0">
                     <div id="mini-icon-bg" class="w-12 h-12 shrink-0 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
@@ -303,10 +336,37 @@
                 </div>
             </div>
 
-            <!-- Wrapper für das Dashboard (Startet versteckt) -->
-            <div id="music-card-wrapper" class="hidden opacity-0 -translate-y-4 transition-all duration-300 ease-out origin-top">
-                <div id="main-music-card" class="glass-card offline w-full max-w-[400px] mx-auto p-10 rounded-[3rem] text-center relative z-10 overflow-hidden">
+            <!-- Wrapper für das Dashboard -->
+            <div id="music-card-wrapper" class="hidden opacity-0 -translate-y-4 transition-all duration-300 ease-out origin-top flex justify-center">
+                <div id="main-music-card" class="glass-card offline w-full max-w-[400px] mx-auto p-10 rounded-[3rem] text-center relative z-10 overflow-hidden flex flex-col justify-center items-center">
                     <div id="ambient-bg"></div>
+
+                    <!-- Lyrics Overlay -->
+                    <div id="lyrics-overlay" class="absolute inset-0 bg-slate-900/95 backdrop-blur-3xl rounded-[3rem] flex-col p-6 md:p-8 z-40 transition-all duration-500 opacity-0 translate-y-8 pointer-events-none flex">
+                        
+                        <!-- Song-Info oben im Lyrics Modus -->
+                        <div class="flex items-center justify-between gap-4 mb-6 shrink-0 w-full bg-white/5 p-4 rounded-2xl border border-white/10">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <img id="lyrics-mini-art" src="" class="w-10 h-10 rounded shadow-md object-cover shrink-0">
+                                <div class="text-left min-w-0">
+                                    <p id="lyrics-mini-title" class="text-sm font-bold text-white truncate">Titel</p>
+                                    <p id="lyrics-mini-artist" class="text-xs text-white/60 truncate">Artist</p>
+                                </div>
+                            </div>
+                            <button onclick="toggleLyrics(false)" class="p-2 hover:bg-white/10 rounded-full transition-colors text-white shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                            </button>
+                        </div>
+
+                        <!-- Der maskierte Scrollbereich -->
+                        <div class="relative flex-1 overflow-hidden mask-image-gradient w-full max-w-2xl mx-auto">
+                            <div id="lyrics-container" class="absolute inset-0 overflow-y-auto text-left w-full h-full pb-10">
+                                <div id="lyrics-content" class="transition-all flex flex-col items-start w-full">
+                                    Suche nach Text...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <div id="music-picker" class="absolute inset-0 bg-slate-900/95 rounded-[3rem] hidden flex-col justify-center p-10 gap-4 z-50">
                         <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-6">Service wählen</p>
@@ -315,23 +375,41 @@
                         <button onclick="toggleMusicPicker(false)" class="text-white/50 text-xs mt-4 hover:text-white transition-colors">Abbrechen</button>
                     </div>
 
-                    <div id="music-header-tag" class="relative z-10 text-[10px] font-black text-blue-500 uppercase tracking-[0.4em] mb-8 transition-all">
+                    <div id="music-header-tag" class="relative z-10 text-[10px] font-black text-blue-500 uppercase tracking-[0.4em] mb-6 transition-all shrink-0">
                         Gamingpig is Offline
                     </div>
 
-                    <div id="media-container" onclick="toggleMusicPicker(true)" class="relative z-10 w-[240px] h-[240px] md:w-[280px] md:h-[280px] rounded-2xl mx-auto mb-8 overflow-hidden flex items-center justify-center bg-[#121212] shadow-[0_20px_40px_rgba(0,0,0,0.8)] cursor-pointer hover:ring-2 hover:ring-white/20 transition-all">
+                    <div id="media-container" onclick="toggleMusicPicker(true)" class="relative z-10 w-[240px] h-[240px] md:w-[280px] md:h-[280px] shrink-0 rounded-2xl mx-auto mb-6 overflow-hidden flex items-center justify-center bg-[#121212] shadow-[0_20px_40px_rgba(0,0,0,0.8)] cursor-pointer hover:ring-2 hover:ring-white/20 transition-all">
                         <img id="artwork" src="" alt="" class="w-full h-full object-cover">
                         <div id="offline-icon" class="absolute text-6xl">🌙</div>
                     </div>
 
-                    <div class="relative z-10 mb-10 text-left px-2">
+                    <div class="relative z-10 mb-6 text-left px-2 w-full shrink-0">
                         <h2 id="track-title" class="text-2xl md:text-3xl font-extrabold text-white break-words leading-[1.1] mb-2 transition-all">Aktuell ist es ruhig...</h2>
                         <p id="track-artist" class="text-white/70 text-lg font-medium">Genieße die Stille</p>
                     </div>
 
-                    <div class="relative z-10 inline-flex items-center gap-2.5 px-4 py-2 bg-white/5 rounded-full text-[0.7rem] font-extrabold uppercase tracking-[2px] border border-white/10 text-white">
-                        <span id="status-dot" class="h-2 w-2 rounded-full bg-blue-500"></span>
-                        <span id="status-text">Zen Mode</span>
+                    <!-- Progress Bar & Timestamps -->
+                    <div id="progress-container" class="relative z-10 w-full px-2 mb-6 shrink-0 transition-all">
+                        <div class="flex justify-between text-[11px] font-mono text-white/60 mb-2">
+                            <span id="time-current">0:00</span>
+                            <span id="time-total">0:00</span>
+                        </div>
+                        <div class="h-1.5 w-full bg-white/10 rounded-full overflow-hidden relative">
+                            <div id="progress-bar" class="absolute top-0 left-0 h-full bg-white w-0 transition-all duration-300 ease-linear rounded-full"></div>
+                        </div>
+                    </div>
+
+                    <div id="controls-container" class="relative z-10 flex items-center justify-between px-2 w-full shrink-0 transition-all">
+                        <div class="inline-flex items-center gap-2.5 px-4 py-2 bg-white/5 rounded-full text-[0.7rem] font-extrabold uppercase tracking-[2px] border border-white/10 text-white">
+                            <span id="status-dot" class="h-2 w-2 rounded-full bg-blue-500"></span>
+                            <span id="status-text">Zen Mode</span>
+                        </div>
+                        
+                        <!-- Lyrics Button -->
+                        <button onclick="toggleLyrics(true)" class="p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all" title="Lyrics anzeigen">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -339,8 +417,6 @@
 
         <!-- SOCIAL GRID -->
         <div class="grid gap-8 reveal">
-            
-            <!-- HEADER 3 (Pflicht) -->
             <div class="glass-card p-8 rounded-[2.5rem] group overflow-hidden relative border border-slate-200 dark:border-slate-800">
                 <div class="flex items-center gap-5 mb-6">
                     <div class="p-3 bg-pink-500/10 text-pink-600 rounded-2xl group-hover:rotate-12 transition-transform">
@@ -356,7 +432,6 @@
                 </a>
             </div>
 
-            <!-- HEADER 4 (Pflicht) -->
             <div class="glass-card p-8 rounded-[2.5rem] group overflow-hidden relative border border-slate-200 dark:border-slate-800">
                 <div class="flex items-center gap-5 mb-6">
                     <div class="p-3 bg-red-500/10 text-red-600 rounded-2xl group-hover:rotate-12 transition-transform">
@@ -372,7 +447,6 @@
                 </a>
             </div>
 
-            <!-- GITHUB -->
             <div class="glass-card p-8 rounded-[2.5rem] group overflow-hidden relative border border-slate-200 dark:border-slate-800">
                 <div class="flex items-center gap-5 mb-6">
                     <div class="p-3 bg-slate-500/10 text-slate-900 dark:text-white rounded-2xl group-hover:rotate-12 transition-transform">
@@ -388,7 +462,6 @@
                 </a>
             </div>
 
-            <!-- HEADER 5 (Pflicht) -->
             <div class="glass-card p-8 rounded-[2.5rem] group overflow-hidden relative border border-slate-200 dark:border-slate-800">
                 <div class="flex items-center gap-5 mb-6">
                     <div class="p-3 bg-pink-500/10 text-pink-600 rounded-2xl group-hover:rotate-12 transition-transform">
@@ -403,7 +476,6 @@
                     </div>
                 </a>
             </div>
-
         </div>
 
         <footer class="mt-40 text-center reveal">
@@ -413,7 +485,6 @@
                 <p class="font-bold text-sm text-slate-900 dark:text-white">Erstellt von Jonas Johnston</p>
             </div>
         </footer>
-
     </main>
 
     <script>
@@ -431,24 +502,11 @@
             localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
         });
 
-        // --- Modal Content Portfolio ---
         const details = {
-            status: {
-                title: "Ausbildung & Fokus",
-                content: "Ich absolviere aktuell meine Ausbildung zum Fachinformatiker für Systemintegration. Technik und Systeme sind meine Welt. Ich liebe es, Server aufzusetzen, Netzwerke zu konfigurieren und alles am Laufen zu halten. Mein Hyperfokus hilft mir dabei, tief in komplexe IT-Strukturen einzutauchen und Fehler zu finden, bevor sie zum Problem werden."
-            },
-            background: {
-                title: "Hintergrund & Weg",
-                content: "Ich bin 19 Jahre alt und lebe in einer Jugendhilfeeinrichtung. Das hat mich früh gelehrt, unabhängig zu sein und meinen eigenen Weg zu gehen. Ich sehe Herausforderungen nicht als Hindernis, sondern als Chance, zu wachsen und meine eigene Zukunft zu gestalten."
-            },
-            freizeit: {
-                title: "Gaming & Content",
-                content: "Wenn die Server laufen, bin ich bei Forza Horizon 5 anzutreffen. Ich streame live auf TikTok und teile meine Leidenschaft für Gaming und Technik mit der Community. Es geht mir um den Vibe, den Austausch und das Meistern neuer Challenges."
-            },
-            menschen: {
-                title: "Meine Wahlfamilie",
-                content: "Da ich ohne Eltern aufgewachsen bin, sind Freunde meine gewählte Familie. Loyalität und Vertrauen stehen für mich an erster Stelle. Mein bester Freund Tom ist dabei mein wichtigster Anker im Leben – wir gehen den Weg gemeinsam."
-            }
+            status: { title: "Ausbildung & Fokus", content: "Ich absolviere aktuell meine Ausbildung zum Fachinformatiker für Systemintegration. Technik und Systeme sind meine Welt. Ich liebe es, Server aufzusetzen, Netzwerke zu konfigurieren und alles am Laufen zu halten. Mein Hyperfokus hilft mir dabei, tief in komplexe IT-Strukturen einzutauchen und Fehler zu finden, bevor sie zum Problem werden." },
+            background: { title: "Hintergrund & Weg", content: "Ich bin 19 Jahre alt und lebe in einer Jugendhilfeeinrichtung. Das hat mich früh gelehrt, unabhängig zu sein und meinen eigenen Weg zu gehen. Ich sehe Herausforderungen nicht als Hindernis, sondern als Chance, zu wachsen und meine eigene Zukunft zu gestalten." },
+            freizeit: { title: "Gaming & Content", content: "Wenn die Server laufen, bin ich bei Forza Horizon 5 anzutreffen. Ich streame live auf TikTok und teile meine Leidenschaft für Gaming und Technik mit der Community. Es geht mir um den Vibe, den Austausch und das Meistern neuer Challenges." },
+            menschen: { title: "Meine Wahlfamilie", content: "Da ich ohne Eltern aufgewachsen bin, sind Freunde meine gewählte Familie. Loyalität und Vertrauen stehen für mich an erster Stelle. Mein bester Freund Tom ist dabei mein wichtigster Anker im Leben – wir gehen den Weg gemeinsam." }
         };
 
         const modalOverlay = document.getElementById('modal-overlay');
@@ -482,7 +540,6 @@
             if (e.target === modalOverlay) closeModal.click();
         });
 
-        // --- Scroll Animationen Portfolio ---
         function reveal() {
             const reveals = document.querySelectorAll(".reveal");
             for (let i = 0; i < reveals.length; i++) {
@@ -494,24 +551,22 @@
                 }
             }
         }
-
         window.addEventListener("scroll", reveal);
         window.addEventListener("load", reveal);
 
-
-        // --- MUSIC DASHBOARD LOGIK ---
+        // --- MUSIC DASHBOARD UI TOGGLES ---
         const musicCardWrapper = document.getElementById('music-card-wrapper');
         const musicChevron = document.getElementById('music-chevron');
         const miniTitle = document.getElementById('mini-title');
         const miniStatus = document.getElementById('mini-status');
         const miniIconBg = document.getElementById('mini-icon-bg');
+        const mainMusicCard = document.getElementById('main-music-card');
         let isDashboardOpen = false;
 
         window.toggleDashboard = function() {
             isDashboardOpen = !isDashboardOpen;
             if (isDashboardOpen) {
                 musicCardWrapper.classList.remove('hidden');
-                // Timeout für flüssige CSS Transition
                 setTimeout(() => {
                     musicCardWrapper.classList.remove('opacity-0', '-translate-y-4');
                     musicCardWrapper.classList.add('opacity-100', 'translate-y-0');
@@ -526,7 +581,7 @@
                     musicCardWrapper.classList.add('hidden');
                 }, 300);
                 
-                if (musicCard.classList.contains('offline')) {
+                if (mainMusicCard.classList.contains('offline')) {
                     miniStatus.innerText = "Klicken zum Öffnen";
                 } else {
                     miniStatus.innerText = "Klicken zum Schließen";
@@ -535,18 +590,9 @@
             }
         };
 
-        const musicCard = document.getElementById('main-music-card');
-        const mTitle = document.getElementById('track-title');
-        const mArtist = document.getElementById('track-artist');
-        const mArtwork = document.getElementById('artwork');
-        const mAmbient = document.getElementById('ambient-bg');
-        const mHeader = document.getElementById('music-header-tag');
-        const mDot = document.getElementById('status-dot');
-        const mText = document.getElementById('status-text');
         const mPicker = document.getElementById('music-picker');
-
         window.toggleMusicPicker = function(show) {
-            if (!musicCard.classList.contains('offline')) {
+            if (!mainMusicCard.classList.contains('offline')) {
                 if(show) {
                     mPicker.classList.remove('hidden');
                     mPicker.classList.add('flex');
@@ -557,114 +603,445 @@
             }
         };
 
+        // --- NEUE TIMER & LYRICS LOGIK ---
+        const mTitle = document.getElementById('track-title');
+        const mArtist = document.getElementById('track-artist');
+        const mArtwork = document.getElementById('artwork');
+        const mAmbient = document.getElementById('ambient-bg');
+        const mHeader = document.getElementById('music-header-tag');
+        const mDot = document.getElementById('status-dot');
+        const mText = document.getElementById('status-text');
+        const timeCurrentEl = document.getElementById('time-current');
+        const timeTotalEl = document.getElementById('time-total');
+        const progressBar = document.getElementById('progress-bar');
+        const lyricsContent = document.getElementById('lyrics-content');
+        const lyricsContainer = document.getElementById('lyrics-container');
+        const lyricsMiniArt = document.getElementById('lyrics-mini-art');
+        const lyricsMiniTitle = document.getElementById('lyrics-mini-title');
+        const lyricsMiniArtist = document.getElementById('lyrics-mini-artist');
+
+        let currentMs = 0;
+        let totalMs = 0;
+        let currentTrackId = ""; 
+        let parsedLyrics = [];
+        let currentLyricIndex = -1;
+        
+        // Präzise Timer-Variablen
+        let localStartTime = 0;
+        let serverBaseProgress = 0;
+        let trackIsPlaying = false;
+        let lyricAnimFrame = null;
+        let lastProcessedUpdate = 0; // Verhindert veraltete Updates
+        let lastSeenProgressMs = -1; // ANTI-JITTER: Speichert den letzten echten Spotify-Wert
+
+        function formatTime(ms) {
+            if (!ms || ms < 0) return "0:00";
+            const totalSeconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function updateProgressUI() {
+            timeCurrentEl.innerText = formatTime(currentMs);
+            if (totalMs > 0) {
+                const percentage = (currentMs / totalMs) * 100;
+                progressBar.style.width = `${Math.min(percentage, 100)}%`;
+            } else {
+                progressBar.style.width = '0%';
+            }
+        }
+
+        // Besserer Parser: Entfernt störende Inline-Timestamps (z.B. von LRCLIB)
+        function parseLrc(lrcString) {
+            const lines = lrcString.split('\n');
+            const regex = /\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/;
+            parsedLyrics = [];
+            lines.forEach(line => {
+                const match = regex.exec(line);
+                if (match) {
+                    const m = parseInt(match[1]);
+                    const s = parseInt(match[2]);
+                    let msStr = match[3];
+                    const ms = msStr.length === 2 ? parseInt(msStr) * 10 : parseInt(msStr);
+                    const text = match[4].replace(/<\d{2}:\d{2}\.\d{2,3}>/g, '').trim();
+                    parsedLyrics.push({ timeMs: (m * 60000) + (s * 1000) + ms, text: text || "♪" });
+                }
+            });
+        }
+
+        function renderLyrics(fallbackText) {
+            if (parsedLyrics.length === 0) {
+                lyricsContent.innerHTML = `<p class="text-xl font-bold text-white/70 leading-relaxed whitespace-pre-wrap">${fallbackText || "Instrumental / Kein Text gefunden"}</p>`;
+                return;
+            }
+            lyricsContent.innerHTML = '<div class="w-full pt-[40vh] pb-[40vh] px-4">' + parsedLyrics.map((line, idx) => {
+                const words = line.text.split(' ');
+                return `<div id="lyric-line-${idx}" class="lyric-line">` + 
+                    words.map((word, wIdx) => `<span id="word-${idx}-${wIdx}" class="lyric-word">${word}</span>`).join(' ') +
+                `</div>`;
+            }).join('') + '</div>';
+        }
+
+        function scrollToLyricElement(el) {
+            if (!el || !lyricsContainer) return;
+            const containerHeight = lyricsContainer.clientHeight;
+            const elementTop = el.offsetTop;
+            const elementHeight = el.clientHeight;
+            
+            requestAnimationFrame(() => {
+                lyricsContainer.scrollTo({
+                    top: elementTop - (containerHeight / 2) + (elementHeight / 2),
+                    behavior: 'smooth'
+                });
+            });
+        }
+
+        // Neue, PERFEKTE UI-Sync Logik
+        function syncLyricsUI(forceScroll = false) {
+            if (parsedLyrics.length === 0 || !mainMusicCard.classList.contains('lyrics-open')) return;
+
+            // LYRICS OFFSET FIX: Noch weiter in die Zukunft!
+            // 450ms waren zu knapp für perfekten Sync. Auf 650ms hochgeschraubt.
+            // Der Text wartet jetzt exakt auf den Sänger.
+            const syncMs = currentMs + 650;
+
+            let newActiveIdx = -1;
+            for (let i = 0; i < parsedLyrics.length; i++) {
+                if (syncMs >= parsedLyrics[i].timeMs) {
+                    newActiveIdx = i;
+                } else {
+                    break;
+                }
+            }
+
+            if (newActiveIdx !== currentLyricIndex || forceScroll) {
+                if (currentLyricIndex !== -1) {
+                    const oldEl = document.getElementById(`lyric-line-${currentLyricIndex}`);
+                    if(oldEl) oldEl.classList.remove('active');
+                }
+                
+                currentLyricIndex = newActiveIdx;
+                
+                if (currentLyricIndex !== -1) {
+                    const activeEl = document.getElementById(`lyric-line-${currentLyricIndex}`);
+                    if (activeEl) {
+                        activeEl.classList.add('active');
+                        scrollToLyricElement(activeEl);
+                    }
+                }
+            }
+
+            // Realistischere Word-by-Word Animation (benutzt ebenfalls den syncMs Offset)
+            parsedLyrics.forEach((line, idx) => {
+                const lineEl = document.getElementById(`lyric-line-${idx}`);
+                if (!lineEl) return;
+
+                const words = line.text.split(' ');
+                const totalChars = line.text.length;
+
+                if (idx < currentLyricIndex) {
+                    words.forEach((_, wIdx) => {
+                        const wordSpan = document.getElementById(`word-${idx}-${wIdx}`);
+                        if (wordSpan) wordSpan.style.setProperty('--fill-percent', '100%');
+                    });
+                } else if (idx === currentLyricIndex) {
+                    const nextLine = parsedLyrics[idx + 1];
+                    let duration;
+                    
+                    if (nextLine) {
+                        const timeToNext = nextLine.timeMs - line.timeMs;
+                        // Dynamisches Stretching: Nutze 90% der Pause bis zur nächsten Line!
+                        // Der Hard-Cap von 75ms ist weg. Stattdessen maximal 250ms pro Buchstabe,
+                        // damit extrem lange Solos nicht zur totalen Zeitlupe werden, es aber bei
+                        // langen, gezogenen Wörtern trotzdem realistisch langsam füllt.
+                        duration = Math.min(timeToNext * 0.90, Math.max(300, totalChars * 250));
+                    } else {
+                        duration = Math.max(1500, totalChars * 120);
+                    }
+
+                    const lineElapsed = syncMs - line.timeMs;
+                    const lineProgressRatio = Math.min(Math.max(lineElapsed / duration, 0), 1);
+
+                    let currentCharSum = 0;
+                    words.forEach((word, wIdx) => {
+                        const wordSpan = document.getElementById(`word-${idx}-${wIdx}`);
+                        if (!wordSpan) return;
+
+                        const wordLen = word.length;
+                        const wordStartRatio = currentCharSum / totalChars;
+                        const wordEndRatio = (currentCharSum + wordLen) / totalChars;
+
+                        let wordPercent = 0;
+                        if (lineProgressRatio > wordEndRatio) {
+                            wordPercent = 100;
+                        } else if (lineProgressRatio < wordStartRatio) {
+                            wordPercent = 0;
+                        } else {
+                            wordPercent = ((lineProgressRatio - wordStartRatio) / (wordEndRatio - wordStartRatio)) * 100;
+                        }
+                        
+                        wordSpan.style.setProperty('--fill-percent', `${wordPercent}%`);
+                        currentCharSum += wordLen + 1;
+                    });
+                } else {
+                    words.forEach((_, wIdx) => {
+                        const wordSpan = document.getElementById(`word-${idx}-${wIdx}`);
+                        if (wordSpan) wordSpan.style.setProperty('--fill-percent', '0%');
+                    });
+                }
+            });
+        }
+
+        // Zentraler Animation Loop - Basiert auf performance.now() für perfekten Sync
+        function animateLoop(now) {
+            if (trackIsPlaying) {
+                currentMs = serverBaseProgress + (now - localStartTime);
+                if (totalMs > 0 && currentMs > totalMs) currentMs = totalMs;
+                
+                updateProgressUI();
+                if (mainMusicCard.classList.contains('lyrics-open')) {
+                    syncLyricsUI();
+                }
+            }
+            lyricAnimFrame = requestAnimationFrame(animateLoop);
+        }
+
+        window.toggleLyrics = function(show) {
+            if(show) {
+                mainMusicCard.classList.add('lyrics-open');
+                setTimeout(() => syncLyricsUI(true), 100); 
+            } else {
+                mainMusicCard.classList.remove('lyrics-open');
+            }
+        }
+
+        window.jumpToLyric = function(idx) {
+            const el = document.getElementById(`lyric-line-${idx}`);
+            if(el) {
+                serverBaseProgress = parsedLyrics[idx].timeMs;
+                localStartTime = performance.now();
+                currentMs = serverBaseProgress;
+                updateProgressUI();
+                syncLyricsUI(true);
+            }
+        }
+
+        async function fetchExternalLyrics(title, artist) {
+            lyricsContent.innerHTML = '<p class="text-xl font-bold text-white/40 leading-snug animate-pulse">Suche nach synchronem Text auf LRCLIB...</p>';
+            parsedLyrics = [];
+            currentLyricIndex = -1;
+            try {
+                const query = new URLSearchParams({ track_name: title, artist_name: artist });
+                const res = await fetch(`https://lrclib.net/api/get?${query}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.syncedLyrics) {
+                        parseLrc(data.syncedLyrics);
+                        renderLyrics();
+                        syncLyricsUI(true);
+                        return;
+                    } else if (data.plainLyrics) {
+                        renderLyrics(data.plainLyrics);
+                        return;
+                    }
+                }
+                throw new Error("LRCLIB leer");
+            } catch (err) {
+                try {
+                    const fallbackRes = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
+                    if(fallbackRes.ok) {
+                        const fallbackData = await fallbackRes.json();
+                        if(fallbackData.lyrics) {
+                            renderLyrics(fallbackData.lyrics);
+                            return;
+                        }
+                    }
+                } catch(e) {}
+                lyricsContent.innerHTML = '<p class="text-lg font-bold text-white/50 leading-snug">Weder synchrone noch normale Texte in öffentlichen Datenbanken gefunden.</p>';
+            }
+        }
+
         function updateMusicUI(data) {
-            // Check auf Offline/Pause
-            if (!data || !data.track || data.status === "paused") {
-                musicCard.classList.add('offline');
-                musicCard.classList.remove('playing');
+            const hasTrack = data && data.track;
+            const isPlaying = data && data.status === "playing";
+
+            if (!hasTrack || !isPlaying) {
+                mainMusicCard.classList.add('offline');
+                mainMusicCard.classList.remove('playing');
+                if(mainMusicCard.classList.contains('lyrics-open')) toggleLyrics(false);
                 mHeader.innerText = "Gamingpig is Offline";
-                mHeader.className = "relative z-10 text-[10px] font-black text-blue-500 uppercase tracking-[0.4em] mb-8 transition-all";
+                mHeader.className = "relative z-10 text-[10px] font-black text-blue-500 uppercase tracking-[0.4em] mb-6 transition-all";
                 mTitle.innerText = "Aktuell ist es ruhig...";
                 mArtist.innerText = "Genieße die Stille";
                 mAmbient.style.backgroundImage = "none";
                 mDot.className = "h-2 w-2 rounded-full bg-blue-500";
                 mText.innerText = "Zen Mode";
-
-                // Mini-Bar Update
                 miniTitle.innerText = "Dashboard minimiert";
                 miniIconBg.className = "w-12 h-12 shrink-0 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center transition-colors";
                 if(!isDashboardOpen) miniStatus.innerText = "Klicken zum Öffnen";
+                
+                lyricsMiniTitle.innerText = "Offline";
+                lyricsMiniArtist.innerText = "Keine Musik";
+                lyricsMiniArt.removeAttribute('src'); // Besser als leeren String, verhindert broken image icon
+                
+                trackIsPlaying = false;
+                currentTrackId = "";
+                parsedLyrics = [];
+                currentMs = 0;
+                totalMs = 0;
+                updateProgressUI();
                 return;
             }
 
-            // Online Modus
-            musicCard.classList.remove('offline');
-            musicCard.classList.add('playing');
+            mainMusicCard.classList.remove('offline');
+            mainMusicCard.classList.add('playing');
             mHeader.innerText = "Gamingpig is listening to";
-            mHeader.className = "relative z-10 text-[10px] font-black text-green-500 uppercase tracking-[0.4em] mb-8 transition-all";
-            
-            // Cover & Glow
-            const imgUrl = data.track.artwork_url;
-            mArtwork.src = imgUrl;
-            mAmbient.style.backgroundImage = `url('${imgUrl}')`;
-            
-            mTitle.innerText = data.track.title;
-            mArtist.innerText = data.track.artist;
-            
             mDot.className = "h-2 w-2 rounded-full bg-green-500 active-dot";
+            const imgUrl = data.track.artwork_url;
+            
+            // ANTI-BROKEN-IMAGE FIX: Separat checken! 
+            // Da das Mini-Art beim Pausieren gelöscht wurde, muss es unabhängig vom Main-Artwork neu gesetzt werden.
+            if(mArtwork.getAttribute('src') !== imgUrl) {
+                mArtwork.src = imgUrl; 
+                mAmbient.style.backgroundImage = `url('${imgUrl}')`;
+            }
+            
+            if(lyricsMiniArt.getAttribute('src') !== imgUrl) {
+                lyricsMiniArt.src = imgUrl; 
+            }
+            
+            if(mTitle.innerText !== data.track.title) {
+                mTitle.innerText = data.track.title;
+                lyricsMiniTitle.innerText = data.track.title; 
+            }
+            if(mArtist.innerText !== data.track.artist) {
+                mArtist.innerText = data.track.artist;
+                lyricsMiniArtist.innerText = data.track.artist; 
+            }
             mText.innerText = data.provider || "Streaming";
 
-            // Mini-Bar Update
-            miniTitle.innerText = data.track.title;
-            miniIconBg.className = "w-12 h-12 shrink-0 rounded-xl bg-green-500/10 text-green-500 flex items-center justify-center transition-colors active-dot";
-            if(!isDashboardOpen) miniStatus.innerText = data.track.artist;
+            const newTrackId = data.track.title + "-" + data.track.artist;
+            const isNewTrack = (newTrackId !== currentTrackId);
 
-            const l = data.track.platform_links;
+            // ANTI-JITTER LOGIK: 
+            // Wenn die API uns mehrfach exakt denselben Fortschritt schickt (Cache), 
+            // zerschießt das unseren Timer. Wir ignorieren diese veralteten Daten restlos!
+            if (data.track.progress_ms === lastSeenProgressMs && trackIsPlaying === isPlaying && !isNewTrack) {
+                return;
+            }
+            lastSeenProgressMs = data.track.progress_ms;
+
+            const apiUpdatedAt = data.updated_at ? new Date(data.updated_at).getTime() : Date.now();
+            if (apiUpdatedAt < lastProcessedUpdate) return;
+            lastProcessedUpdate = apiUpdatedAt;
+
+            // MILLISEKUNDEN LATENZ-AUSGLEICH (Verhindert Start bei 0:00 bei laufendem Song)
+            let dataAge = Date.now() - apiUpdatedAt;
+            if (dataAge < 0) dataAge = 0;
+            if (data.track.duration_ms && dataAge > data.track.duration_ms) dataAge = data.track.duration_ms;
+
+            let apiProgress = (data.track.progress_ms || 0);
+            if (isPlaying) {
+                apiProgress += dataAge;
+            }
+            if (data.track.duration_ms && apiProgress > data.track.duration_ms) {
+                apiProgress = data.track.duration_ms;
+            }
+
+            if (isNewTrack) {
+                // Hard Reset für komplett neuen Track (zählt nie wieder bei 0 los, wenn der Song schon läuft!)
+                currentTrackId = newTrackId;
+                totalMs = data.track.duration_ms || 0;
+                timeTotalEl.innerText = formatTime(totalMs);
+                
+                trackIsPlaying = isPlaying;
+                serverBaseProgress = apiProgress;
+                localStartTime = performance.now();
+                currentMs = apiProgress;
+                
+                fetchExternalLyrics(data.track.title, data.track.artist);
+            } else {
+                // Play / Pause Status-Änderung sauber abfangen
+                if (!trackIsPlaying && isPlaying) {
+                    trackIsPlaying = true;
+                    serverBaseProgress = apiProgress;
+                    localStartTime = performance.now();
+                    currentMs = apiProgress;
+                    syncLyricsUI(true);
+                } else if (trackIsPlaying && !isPlaying) {
+                    trackIsPlaying = false;
+                    currentMs = apiProgress;
+                } else if (trackIsPlaying) {
+                    // Timer läuft lokal perfekt weiter. Skip-Kontrolle:
+                    // Reduziert auf 2000ms. Das filtert API-Jitter, erkennt aber echtes Spulen sofort!
+                    if (Math.abs(currentMs - apiProgress) > 2000) {
+                        serverBaseProgress = apiProgress;
+                        localStartTime = performance.now();
+                        currentMs = apiProgress;
+                        syncLyricsUI(true);
+                    }
+                }
+            }
+
+            updateProgressUI();
+
+            miniTitle.innerText = data.track.title;
+            miniIconBg.className = 'w-12 h-12 shrink-0 rounded-xl flex items-center justify-center transition-colors bg-green-500/10 text-green-500 active-dot';
+            if(!isDashboardOpen) miniStatus.innerText = data.track.artist;
+            const l = data.track.platform_links || {};
             document.getElementById('link-spotify').href = l.spotify || "#";
             document.getElementById('link-apple').href = l.appleMusic || "#";
         }
 
-        // --- Robuste Echtzeit-Verbindung ---
         let musicSocket = null;
-
         function connectMusicSocket() {
-            if (musicSocket && musicSocket.readyState === WebSocket.OPEN) return; // Nicht doppelt connecten
-            
+            if (musicSocket && musicSocket.readyState === WebSocket.OPEN) return; 
             musicSocket = new WebSocket('wss://npc-api.aikins.xyz/v1/users/gamingpig/ws');
             musicSocket.onopen = () => {
                 fetch('https://npc-api.aikins.xyz/v1/users/gamingpig/now')
-                    .then(r => r.json()).then(updateMusicUI)
-                    .catch(err => console.log("Init-Fetch Fehler:", err));
+                    .then(r => r.json()).then(updateMusicUI);
             };
             musicSocket.onmessage = (e) => {
                 const msg = JSON.parse(e.data);
                 if (msg.event === "update") updateMusicUI(msg.data);
             };
-            musicSocket.onclose = () => {
-                setTimeout(connectMusicSocket, 3000); // Reconnect nach 3 Sekunden, falls Socket stirbt
-            };
+            musicSocket.onclose = () => setTimeout(connectMusicSocket, 3000); 
         }
 
-        // NEU: Polling Fallback, falls der WebSocket im Hintergrund schläft oder disconnected ist
+        // Fallback Polling: Zündet NUR NOCH, wenn der WebSocket tot ist!
         setInterval(() => {
+            if (musicSocket && musicSocket.readyState === WebSocket.OPEN) return;
             fetch('https://npc-api.aikins.xyz/v1/users/gamingpig/now')
-                .then(r => r.json())
-                .then(updateMusicUI)
-                .catch(err => console.log("Hintergrund-Fetch Fehler:", err));
-        }, 3000);
+                .then(r => r.json()).then(updateMusicUI)
+                .catch(() => {});
+        }, 5000);
 
-        // NEU: Page Visibility API - Zwingt das Update, wenn du auf den Tab zurückwechselst
         document.addEventListener("visibilitychange", () => {
             if (document.visibilityState === "visible") {
-                // Baller sofort einen frischen Fetch ab, ohne auf das Intervall zu warten
                 fetch('https://npc-api.aikins.xyz/v1/users/gamingpig/now')
-                    .then(r => r.json())
-                    .then(updateMusicUI)
-                    .catch(err => console.log("Wakeup-Fetch Fehler:", err));
-                
-                // Prüfe knallhart, ob der Browser den Socket im Hintergrund gekillt hat
-                if (!musicSocket || musicSocket.readyState === WebSocket.CLOSED) {
-                    connectMusicSocket();
-                }
+                    .then(r => r.json()).then(updateMusicUI);
+                if (!musicSocket || musicSocket.readyState === WebSocket.CLOSED) connectMusicSocket();
             }
         });
 
-        // Mouse-Tilt Effekt isoliert für die Music Card
-        musicCard.addEventListener('mousemove', (e) => {
-            const rect = musicCard.getBoundingClientRect();
+        mainMusicCard.addEventListener('mousemove', (e) => {
+            const rect = mainMusicCard.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
             const centerX = rect.width / 2;
             const centerY = rect.height / 2;
-            const rotateX = (y - centerY) / 15;
-            const rotateY = (centerX - x) / 15;
-            musicCard.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+            const rotateX = (y - centerY) / 25; 
+            const rotateY = (centerX - x) / 25;
+            mainMusicCard.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
         });
 
-        musicCard.addEventListener('mouseleave', () => {
-            musicCard.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg)`;
+        mainMusicCard.addEventListener('mouseleave', () => {
+            mainMusicCard.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg)`;
         });
 
+        // Starte den Loop genau ein einziges Mal
+        requestAnimationFrame(animateLoop);
         connectMusicSocket();
     </script>
 </body>
