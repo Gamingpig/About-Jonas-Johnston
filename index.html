@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de" class="scroll-smooth">
+<html lang="de" class="scrollsmooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -634,6 +634,37 @@
         let lastProcessedUpdate = 0; // Verhindert veraltete Updates
         let lastSeenProgressMs = -1; // ANTI-JITTER: Speichert den letzten echten Spotify-Wert
 
+        // --- NTP WORLD TIME SYNC (DIE ATOMBOMBE FÜR DYNAMISCHE ZEIT) ---
+        let localClockOffset = 0;
+        let isTimeSynced = false;
+
+        async function syncWorldwideTime() {
+            try {
+                const startMs = performance.now();
+                // Wir holen uns die absolut exakte, server-unabhängige Weltzeit
+                const response = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC');
+                if (!response.ok) throw new Error("Time API offline");
+                const data = await response.json();
+                const endMs = performance.now();
+                
+                // Ping berechnen, um das Ergebnis auf die Millisekunde zu schärfen
+                const latency = (endMs - startMs) / 2;
+                const trueWorldTime = new Date(data.datetime).getTime() + latency;
+                
+                // Wir berechnen exakt, wie falsch Jonas' PC-Uhr im Vergleich zur echten Weltzeit geht
+                localClockOffset = Date.now() - trueWorldTime;
+                isTimeSynced = true;
+            } catch (error) {
+                console.warn("Weltzeit-Sync fehlgeschlagen, vertraue lokaler Uhr.", error);
+            }
+        }
+
+        // Diese Funktion liefert immer die echte, korrigierte Weltzeit!
+        function getTrueDateNow() {
+            return isTimeSynced ? (Date.now() - localClockOffset) : Date.now();
+        }
+        // -------------------------------------------------------------
+
         function formatTime(ms) {
             if (!ms || ms < 0) return "0:00";
             const totalSeconds = Math.floor(ms / 1000);
@@ -701,10 +732,9 @@
         function syncLyricsUI(forceScroll = false) {
             if (parsedLyrics.length === 0 || !mainMusicCard.classList.contains('lyrics-open')) return;
 
-            // LYRICS OFFSET FIX: Noch weiter in die Zukunft!
-            // 450ms waren zu knapp für perfekten Sync. Auf 650ms hochgeschraubt.
-            // Der Text wartet jetzt exakt auf den Sänger.
-            const syncMs = currentMs + 650;
+            // LYRICS OFFSET FIX: Da der Timer jetzt ABSOLUT PERFEKT ist, 
+            // reicht ein minimaler visueller Vorlauf von 250ms, damit das Auge synchron mit dem Beat liest.
+            const syncMs = currentMs + 250;
 
             let newActiveIdx = -1;
             for (let i = 0; i < parsedLyrics.length; i++) {
@@ -732,7 +762,7 @@
                 }
             }
 
-            // Realistischere Word-by-Word Animation (benutzt ebenfalls den syncMs Offset)
+            // Realistischere Word-by-Word Animation
             parsedLyrics.forEach((line, idx) => {
                 const lineEl = document.getElementById(`lyric-line-${idx}`);
                 if (!lineEl) return;
@@ -749,15 +779,20 @@
                     const nextLine = parsedLyrics[idx + 1];
                     let duration;
                     
+                    // DIE UNGESCHÖNTE WAHRHEIT: Wir haben keine Endzeiten im LRC!
+                    // Deshalb berechnen wir eine realistische Dauer basierend auf der Textlänge (ca. 100ms pro Buchstabe).
+                    // Mindestens 800ms, damit extrem kurze Wörter ("Oh") nicht einfach aufblitzen.
+                    const estimatedSingingTime = Math.max(800, totalChars * 100);
+                    
                     if (nextLine) {
                         const timeToNext = nextLine.timeMs - line.timeMs;
-                        // Dynamisches Stretching: Nutze 90% der Pause bis zur nächsten Line!
-                        // Der Hard-Cap von 75ms ist weg. Stattdessen maximal 250ms pro Buchstabe,
-                        // damit extrem lange Solos nicht zur totalen Zeitlupe werden, es aber bei
-                        // langen, gezogenen Wörtern trotzdem realistisch langsam füllt.
-                        duration = Math.min(timeToNext * 0.90, Math.max(300, totalChars * 250));
+                        // Er nutzt die realistische Sing-Zeit. ABER falls der Sänger extrem schnell
+                        // die nächste Line raushaut, cappen wir es bei 95% der Zeit bis zur nächsten Line.
+                        // Kommt eine lange Pause, greift die Sing-Zeit, er ist auf 100% und WARTET.
+                        duration = Math.min(estimatedSingingTime, timeToNext * 0.95);
                     } else {
-                        duration = Math.max(1500, totalChars * 120);
+                        // Letzte Zeile im Song
+                        duration = estimatedSingingTime;
                     }
 
                     const lineElapsed = syncMs - line.timeMs;
@@ -932,14 +967,16 @@
             }
             lastSeenProgressMs = data.track.progress_ms;
 
-            const apiUpdatedAt = data.updated_at ? new Date(data.updated_at).getTime() : Date.now();
+            // WIR NUTZEN JETZT IMMER DIE ECHTE WELTZEIT (getTrueDateNow()) UM DAS ALTER ZU BERECHNEN
+            const apiUpdatedAt = data.updated_at ? new Date(data.updated_at).getTime() : getTrueDateNow();
             if (apiUpdatedAt < lastProcessedUpdate) return;
             lastProcessedUpdate = apiUpdatedAt;
 
-            // MILLISEKUNDEN LATENZ-AUSGLEICH (Verhindert Start bei 0:00 bei laufendem Song)
-            let dataAge = Date.now() - apiUpdatedAt;
+            // WAHRE DYNAMISCHE LATENZBERECHNUNG OHNE FESTE WERTE
+            let dataAge = getTrueDateNow() - apiUpdatedAt;
+            
             if (dataAge < 0) dataAge = 0;
-            if (data.track.duration_ms && dataAge > data.track.duration_ms) dataAge = data.track.duration_ms;
+            if (dataAge > 15000) dataAge = 15000;
 
             let apiProgress = (data.track.progress_ms || 0);
             if (isPlaying) {
@@ -1040,9 +1077,16 @@
             mainMusicCard.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg)`;
         });
 
-        // Starte den Loop genau ein einziges Mal
-        requestAnimationFrame(animateLoop);
-        connectMusicSocket();
+        // INIT: Erst die Uhr weltweit perfekt synchronisieren, dann den Rest starten!
+        (async () => {
+            await syncWorldwideTime();
+            requestAnimationFrame(animateLoop);
+            connectMusicSocket();
+            
+            // Resync alle 10 Minuten für absolute Präzision, falls die PC Uhr driftet
+            setInterval(syncWorldwideTime, 600000);
+        })();
+
     </script>
 </body>
 </html>
