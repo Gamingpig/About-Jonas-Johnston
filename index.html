@@ -131,7 +131,7 @@
         .track-fade-out {
             opacity: 0 !important;
             transform: scale(0.95) translateY(10px) !important;
-            filter: blur(4px) !important;
+            /* Filter blur entfernt für bessere Performance auf alten Geräten */
         }
         
         #offline-icon { 
@@ -146,7 +146,6 @@
         .offline #offline-icon { 
             opacity: 1; 
             transform: scale(1); 
-            filter: drop-shadow(0 0 20px #3b82f6); 
             visibility: visible; 
         }
         
@@ -166,12 +165,13 @@
             pointer-events: auto;
         }
 
-        /* --- EXTREM EFFIZIENTES LYRICS SYSTEM (Mit reanimiertem, glasklarem Text-Fill) --- */
+        /* --- EXTREM EFFIZIENTES LYRICS SYSTEM (Ohne Dropshadows und Blurs) --- */
         .lyric-line {
             display: block; 
             margin: 4vh 0; 
             line-height: 1.25; 
-            transition: opacity 0.4s ease, filter 0.4s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            /* Filter komplett entfernt - Blur kostet zu viel Leistung auf dem Galaxy S4 Mini */
+            transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
             transform-origin: left center;
             overflow-wrap: break-word;
             word-wrap: break-word;
@@ -181,13 +181,11 @@
         
         .lyrics-open .lyric-line { 
             opacity: 0.25; 
-            filter: blur(2px); 
             transform: scale(0.95);
         }
         
         .lyrics-open .lyric-line.active { 
             opacity: 1; 
-            filter: blur(0px); 
             transform: scale(1.05); 
         }
 
@@ -196,7 +194,6 @@
             display: inline-block;
             margin-right: 0; 
             white-space: pre-wrap; 
-            /* FIX: Der Gradient ist jetzt PERMANENT auf allen Wörtern. Kein Umschalten mehr = Kein Blinken! */
             background: linear-gradient(to right, #ffffff var(--fill-percent, 0%), rgba(255, 255, 255, 0.3) var(--fill-percent, 0%));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -205,15 +202,13 @@
             font-weight: 800; 
             letter-spacing: -0.02em; 
             padding-right: 0.1em;
-            /* Übergänge nur noch für den 3D Pop-Out, nicht mehr für die Farbe */
-            transition: transform 0.1s cubic-bezier(0.34, 1.56, 0.64, 1), text-shadow 0.1s ease;
+            transition: transform 0.1s cubic-bezier(0.34, 1.56, 0.64, 1);
             will-change: transform;
         }
 
         .lyric-word.singing {
             transform: scale(1.1) translateY(-2px);
-            text-shadow: 0px 8px 25px rgba(255, 255, 255, 1);
-            filter: drop-shadow(0px 0px 10px rgba(255,255,255,0.8));
+            /* GLOW UND SHADOWS RESTLOS ENTFERNT FÜR LAGFREIE PERFORMANCE */
         }
 
         .mask-image-gradient {
@@ -235,7 +230,7 @@
         #lyrics-content {
             transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
             will-change: transform;
-            transform: translateY(0px);
+            transform: translate3d(0, 0, 0); /* Initiale 3D Beschleunigung */
             padding-bottom: 50vh;
         }
 
@@ -886,7 +881,7 @@
                 const displayMsg = fallbackText || currentNoLyricsMessage;
                 const isCustomFallback = fallbackMessages.includes(displayMsg);
                 
-                lyricsContent.style.transform = `translateY(0px)`;
+                lyricsContent.style.transform = `translate3d(0, 0px, 0)`;
                 
                 if (isCustomFallback) {
                     lyricsContent.innerHTML = `
@@ -919,10 +914,11 @@
             const elementTop = el.offsetTop;
             const elementHeight = el.clientHeight;
             
+            // Math.round verhindert Subpixel-Jittering. translate3d pusht es in die GPU für alte Geräte.
             const offset = Math.round(-(elementTop - (containerHeight / 2) + (elementHeight / 2)));
             
             requestAnimationFrame(() => {
-                lyricsContent.style.transform = `translateY(${offset}px)`;
+                lyricsContent.style.transform = `translate3d(0, ${offset}px, 0)`;
             });
         }
 
@@ -1084,7 +1080,7 @@
         async function fetchExternalLyrics(title, artist) {
             const fetchId = ++currentFetchId; 
             
-            lyricsContent.style.transform = `translateY(0px)`;
+            lyricsContent.style.transform = `translate3d(0, 0px, 0)`;
             lyricsContent.innerHTML = `
                 <div class="w-full flex flex-col justify-center min-h-[60vh] px-4 md:px-8">
                     <h2 class="text-4xl md:text-6xl font-extrabold text-white/30 tracking-tight leading-[1.1] text-left animate-pulse">
