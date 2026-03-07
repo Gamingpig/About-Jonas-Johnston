@@ -1110,8 +1110,11 @@
 
             let apiProgress = data.track.progress_ms || 0;
             if (isPlaying) {
-                // Echter Fortschritt = Snapshot-Wert + vergangene Zeit seit dem Snapshot + universeller Spotify-Lag (600ms)
-                apiProgress += dataAge + 600;
+                // Echter Fortschritt = Snapshot-Wert + vergangene Zeit seit dem Snapshot + universeller Spotify-Lag 
+                // Auf Mobile kappen wir den Lag auf 0, auf Desktop bleibt er bei 600ms für deine DT 770 Pro!
+                const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+                const spotifyLag = isMobile ? 0 : 600;
+                apiProgress += dataAge + spotifyLag;
             }
             
             if (data.track.duration_ms && apiProgress > data.track.duration_ms) {
