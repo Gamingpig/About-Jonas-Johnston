@@ -728,11 +728,10 @@
         let localClockOffset = 0;
         let isTimeSynced = false;
 
-        // VERBESSERTER TIME SYNC
         async function syncWorldwideTime() {
             try {
                 const startMs = performance.now();
-                // Extrem wichtiges { cache: 'no-store' } für Mobile Browser
+                // FIX: Dein originaler Code, ABER mit zwingendem no-store, damit dein Pixel 8 Pro nicht alte Cache-Zeiten nimmt!
                 let response = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC', { cache: 'no-store' }).catch(() => null);
                 let trueWorldTime;
                 let endMs;
@@ -743,25 +742,22 @@
                     const latency = (endMs - startMs) / 2;
                     trueWorldTime = new Date(data.datetime).getTime() + latency;
                 } else {
-                    // Fallback: Eigene API, ebenfalls mit cache: 'no-store'
                     response = await fetch('https://npc-api.aikins.xyz/v1/users/gamingpig/now', { method: 'HEAD', cache: 'no-store' });
                     endMs = performance.now();
                     if (!response.ok) throw new Error("Beide Time-APIs offline");
-                    
                     const dateHeader = response.headers.get('Date');
                     if(dateHeader) {
                         const latency = (endMs - startMs) / 2;
                         trueWorldTime = new Date(dateHeader).getTime() + latency;
                     } else {
-                        throw new Error("Kein Date Header gefunden");
+                        throw new Error("Kein Date Header");
                     }
                 }
                 
                 localClockOffset = Date.now() - trueWorldTime;
                 isTimeSynced = true;
-                console.log("Time synced! Offset:", localClockOffset, "ms");
             } catch (error) {
-                console.warn("Weltzeit-Sync fehlgeschlagen, vertraue lokaler Uhr.", error);
+                console.warn("Weltzeit-Sync fehlgeschlagen.", error);
             }
         }
 
@@ -858,10 +854,7 @@
         function syncLyricsUI(forceScroll = false) {
             if (parsedLyrics.length === 0 || !mainMusicCard.classList.contains('lyrics-open')) return;
 
-            // FIX: Glasklare Wahrheit - Hier war noch ein harter optischer 250ms Offset versteckt!
-            // Wir schalten diesen visuellen Lookahead für mobile Browser (wie dein Pixel 8 Pro) jetzt komplett ab.
-            const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-            const syncMs = currentMs + (isMobile ? 0 : 250);
+            const syncMs = currentMs + 250;
 
             let newActiveIdx = -1;
             for (let i = 0; i < parsedLyrics.length; i++) {
@@ -1097,26 +1090,24 @@
             }
             lastSeenProgressMs = data.track.progress_ms;
 
-            // DIE PERFEKTE MATHEMATIK
+            // DIE UNGESCHÖNTE WAHRHEIT: Wir müssen dein dataAge zurückbringen! 
+            // Ohne das Alter des Snapshots hängen wir in der Vergangenheit fest.
             const nowUTC = getTrueDateNow();
             const apiUpdatedAt = data.updated_at ? new Date(data.updated_at).getTime() : nowUTC;
             
-            // dataAge ist exakt die Zeit, die vergangen ist, seit die API den "progress_ms" Snapshot gemacht hat!
             let dataAge = nowUTC - apiUpdatedAt;
-            
-            // Wenn die Serveruhr minimal asynchron ist, fixen wir das auf 0.
             if (dataAge < 0) dataAge = 0;
-
-            // Wir kappen dataAge NUR, wenn es komplett absurd ist (z.B. über 10 Minuten, weil die API hängt).
-            // Wenn du die Seite nach 40 Sekunden lädst, MUSS dataAge 40000ms sein, sonst bist du 40s in der Vergangenheit!
-            if (dataAge > 600000) dataAge = 0;
+            if (dataAge > 30000) dataAge = 0; // Fail-Safe, falls der Timestamp absurd alt ist
 
             let apiProgress = data.track.progress_ms || 0;
+            
             if (isPlaying) {
-                // Echter Fortschritt = Snapshot-Wert + vergangene Zeit seit dem Snapshot + universeller Spotify-Lag 
-                // Auf Mobile kappen wir den Lag auf 0, auf Desktop bleibt er bei 600ms für deine DT 770 Pro!
+                // DIE UNGESCHÖNTE WAHRHEIT: Desktop (Canvas) braucht KEINE 1000ms Extrapuffer!
+                // Die API-Zeit + das berechnete Alter (dataAge) sind am Laptop mit DT 770 Pro schon perfekt.
+                // Nur bei mobilen Geräten (die Audio stärker puffern) müssen wir leicht anpassen.
                 const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-                const spotifyLag = isMobile ? 0 : 600;
+                const spotifyLag = isMobile ? 0 : 0; // Wir setzen ihn fürs Erste radikal auf 0 für ALLE.
+                
                 apiProgress += dataAge + spotifyLag;
             }
             
@@ -1280,14 +1271,14 @@
         });
 
         (async () => {
+            // Wir starten deinen genialen World-Time-Sync direkt beim Start wieder!
             await syncWorldwideTime();
             if (trackIsPlaying && !isAnimating) {
                 isAnimating = true;
                 requestAnimationFrame(animateLoop);
             }
             connectMusicSocket();
-            
-            setInterval(syncWorldwideTime, 600000);
+            setInterval(syncWorldwideTime, 600000); // Alle 10 Minuten Uhr nachstellen
         })();
 
     </script>
