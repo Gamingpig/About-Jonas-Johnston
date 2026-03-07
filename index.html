@@ -1097,15 +1097,22 @@
             if (apiUpdatedAt < lastProcessedUpdate) return;
             lastProcessedUpdate = apiUpdatedAt;
 
+            // Die ungeschönte Wahrheit: Wir brauchen das dataAge UND die 1000ms Spotify-Server-Latenz!
             let dataAge = getTrueDateNow() - apiUpdatedAt;
-            // FIX: Begrenzung für extrem falsch gecachte Zeitstempel auf Mobile (max 5000ms zulassen!)
-            if (dataAge < 0) dataAge = 0;
-            if (dataAge > 5000) dataAge = 0; 
+            
+            // Fail-Safe: Wenn das Handy im Standby war oder der Cache kurz spinnt, schnellt dataAge hoch. 
+            // Wir ignorieren absurde Sprünge über 5 Sekunden (5000ms), damit das Pixel 8 Pro nicht in die Zukunft fliegt.
+            if (dataAge < 0 || dataAge > 5000) {
+                dataAge = 0; 
+            }
 
             let apiProgress = (data.track.progress_ms || 0);
             if (isPlaying) {
+                // Hier kommt die magische Sekunde zurück, die es auf dem Laptop perfekt gemacht hat!
+                // Echter Progress = API Progress + (Zeit seit dem API-Poll) + 1000ms (Spotify Server Lag)
                 apiProgress += dataAge + 1000;
             }
+            
             if (data.track.duration_ms && apiProgress > data.track.duration_ms) {
                 apiProgress = data.track.duration_ms;
             }
