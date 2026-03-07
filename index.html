@@ -858,7 +858,10 @@
         function syncLyricsUI(forceScroll = false) {
             if (parsedLyrics.length === 0 || !mainMusicCard.classList.contains('lyrics-open')) return;
 
-            const syncMs = currentMs + 250;
+            // FIX: Glasklare Wahrheit - Hier war noch ein harter optischer 250ms Offset versteckt!
+            // Wir schalten diesen visuellen Lookahead für mobile Browser (wie dein Pixel 8 Pro) jetzt komplett ab.
+            const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            const syncMs = currentMs + (isMobile ? 0 : 250);
 
             let newActiveIdx = -1;
             for (let i = 0; i < parsedLyrics.length; i++) {
