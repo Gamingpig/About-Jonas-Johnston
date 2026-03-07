@@ -731,8 +731,8 @@
         async function syncWorldwideTime() {
             try {
                 const startMs = performance.now();
-                // 1. Versuch: WorldTimeAPI (oft down, aber wenn es klappt, ist es gut)
-                let response = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC').catch(() => null);
+                // FIX: Extrem wichtiges { cache: 'no-store' } für Mobile Browser wie Chrome auf Android
+                let response = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC', { cache: 'no-store' }).catch(() => null);
                 let trueWorldTime;
                 let endMs;
                 
@@ -742,9 +742,8 @@
                     const latency = (endMs - startMs) / 2;
                     trueWorldTime = new Date(data.datetime).getTime() + latency;
                 } else {
-                    // 2. Versuch Fallback: Pinge deine EIGENE API an, die hat kein CORS-Problem für dich
-                    // Wir lesen den 'Date' Header aus der Response deiner API.
-                    response = await fetch('https://npc-api.aikins.xyz/v1/users/gamingpig/now', { method: 'HEAD' });
+                    // Fallback: Eigene API, ebenfalls mit cache: 'no-store'
+                    response = await fetch('https://npc-api.aikins.xyz/v1/users/gamingpig/now', { method: 'HEAD', cache: 'no-store' });
                     endMs = performance.now();
                     if (!response.ok) throw new Error("Beide Time-APIs offline");
                     
@@ -1099,7 +1098,9 @@
             lastProcessedUpdate = apiUpdatedAt;
 
             let dataAge = getTrueDateNow() - apiUpdatedAt;
+            // FIX: Begrenzung für extrem falsch gecachte Zeitstempel auf Mobile (max 5000ms zulassen!)
             if (dataAge < 0) dataAge = 0;
+            if (dataAge > 5000) dataAge = 0; 
 
             let apiProgress = (data.track.progress_ms || 0);
             if (isPlaying) {
@@ -1203,7 +1204,8 @@
             if (musicSocket && musicSocket.readyState === WebSocket.OPEN) return; 
             musicSocket = new WebSocket('wss://npc-api.aikins.xyz/v1/users/gamingpig/ws');
             musicSocket.onopen = () => {
-                fetch('https://npc-api.aikins.xyz/v1/users/gamingpig/now')
+                // Auch hier cachen von mobilen Browsern verbieten
+                fetch('https://npc-api.aikins.xyz/v1/users/gamingpig/now', { cache: 'no-store' })
                     .then(r => r.text())
                     .then(text => text ? JSON.parse(text) : null)
                     .then(updateMusicUI)
@@ -1222,7 +1224,7 @@
 
         setInterval(() => {
             if (musicSocket && musicSocket.readyState === WebSocket.OPEN) return;
-            fetch('https://npc-api.aikins.xyz/v1/users/gamingpig/now')
+            fetch('https://npc-api.aikins.xyz/v1/users/gamingpig/now', { cache: 'no-store' })
                 .then(r => r.text())
                 .then(text => text ? JSON.parse(text) : null)
                 .then(updateMusicUI)
@@ -1231,7 +1233,7 @@
 
         document.addEventListener("visibilitychange", () => {
             if (document.visibilityState === "visible") {
-                fetch('https://npc-api.aikins.xyz/v1/users/gamingpig/now')
+                fetch('https://npc-api.aikins.xyz/v1/users/gamingpig/now', { cache: 'no-store' })
                     .then(r => r.text())
                     .then(text => text ? JSON.parse(text) : null)
                     .then(updateMusicUI)
