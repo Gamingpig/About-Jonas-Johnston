@@ -33,6 +33,7 @@
             scroll-behavior: auto !important;
         }
 
+        /* Komplettes Killen von Hardware-Beschleunigung und Animationen auf alten Geräten um VRAM zu sparen */
         body.low-end *, 
         body.low-end .reveal, 
         body.low-end .glass-card {
@@ -40,6 +41,7 @@
             animation: none !important;
             backdrop-filter: none !important;
             -webkit-backdrop-filter: none !important;
+            will-change: auto !important; 
         }
         
         /* Hintergrund-Effekte killen */
@@ -1056,18 +1058,19 @@
         let lastLowEndUpdate = 0;
         function animateLoop(now) {
             if (trackIsPlaying) {
+                // HARTES THROTTLING: Auf alten Geräten wird die GANZE Schleife gedrosselt (max ~3 FPS)
+                if (document.body.classList.contains('low-end')) {
+                    if (now - lastLowEndUpdate < 333) { 
+                        lyricAnimFrame = requestAnimationFrame(animateLoop);
+                        return; // Bricht ab, CPU darf chillen
+                    }
+                    lastLowEndUpdate = now;
+                }
+
                 currentMs = serverBaseProgress + (now - localStartTime);
                 if (totalMs > 0 && currentMs > totalMs) currentMs = totalMs;
                 
-                // THROTTLING FÜR FORTSCHRITTSBALKEN
-                if (document.body.classList.contains('low-end')) {
-                    if (now - lastLowEndUpdate > 1000) { // Nur 1x pro Sekunde im Low-End Modus
-                        updateProgressUI();
-                        lastLowEndUpdate = now;
-                    }
-                } else {
-                    updateProgressUI(); // 60 FPS im Normal-Modus
-                }
+                updateProgressUI();
 
                 if (mainMusicCard.classList.contains('lyrics-open')) {
                     syncLyricsUI();
