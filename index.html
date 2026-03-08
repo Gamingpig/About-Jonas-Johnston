@@ -28,6 +28,54 @@
             -moz-osx-font-smoothing: grayscale;
         }
 
+        /* --- PERFORMANCE MODUS (LOW-END) --- */
+        body.low-end *, 
+        body.low-end .reveal, 
+        body.low-end .glass-card {
+            transition: none !important;
+            animation: none !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+        
+        /* Hintergrund-Effekte killen */
+        body.low-end .mesh-gradient,
+        body.low-end #ambient-bg {
+            display: none !important;
+        }
+
+        body.low-end .reveal {
+            opacity: 1 !important;
+            transform: none !important;
+        }
+
+        body.low-end .glass-card:not(#main-music-card):not(#mini-player-toggle):hover {
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Lyrics Performance Fix */
+        body.low-end .lyrics-open .lyric-line {
+            opacity: 0.3 !important;
+            filter: none !important;
+            transform: none !important;
+            color: rgba(255,255,255,0.5) !important;
+        }
+
+        body.low-end .lyrics-open .lyric-line.active {
+            opacity: 1 !important;
+            filter: none !important;
+            transform: none !important;
+            color: #ffffff !important; /* Ganze Zeile hart weiß */
+        }
+
+        body.low-end .lyric-word {
+            background: none !important;
+            -webkit-text-fill-color: currentcolor !important;
+            color: inherit !important;
+        }
+        /* --- ENDE PERFORMANCE MODUS --- */
+
         /* Animierter Hintergrund-Glow - Optimiert für alte GPUs */
         .mesh-gradient {
             position: fixed;
@@ -38,7 +86,7 @@
             z-index: -1;
             overflow: hidden;
             background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
-            transform: translateZ(0); /* Hardware Acceleration erzwingen */
+            transform: translateZ(0);
             will-change: transform;
         }
 
@@ -59,9 +107,9 @@
             transform: translateY(0);
         }
 
-        /* Glassmorphism Karten Portfolio - Optimiert für Scroll-Performance */
+        /* Glassmorphism Karten Portfolio */
         .glass-card {
-            background: rgba(255, 255, 255, 0.9); /* Deckenderer Fallback für alte Handys */
+            background: rgba(255, 255, 255, 0.9);
             border: 1px solid rgba(0, 0, 0, 0.05);
             transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.4s, box-shadow 0.4s;
             transform: translateZ(0);
@@ -73,7 +121,6 @@
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
         
-        /* Sanfterer Blur nur für Geräte, die es unterstützen, ohne zu laggen */
         @supports (backdrop-filter: blur(8px)) or (-webkit-backdrop-filter: blur(8px)) {
             .glass-card {
                 background: rgba(255, 255, 255, 0.75);
@@ -92,8 +139,6 @@
             border-color: #3b82f6;
             box-shadow: 0 15px 30px -10px rgba(59, 130, 246, 0.15);
         }
-
-        /* --- Music Dashboard spezifische Styles --- */
         
         #main-music-card {
             background: rgba(15, 23, 42, 0.85) !important;
@@ -121,7 +166,6 @@
             z-index: 0;
             background-size: cover;
             background-position: center;
-            /* Blur von 60px auf 24px reduziert: Massiver Performance-Boost */
             filter: blur(24px) brightness(0.5) saturate(1.2);
             opacity: 0;
             transition: opacity 1s ease, background-image 1s ease;
@@ -132,7 +176,6 @@
 
         .playing #ambient-bg { 
             opacity: 0.8; 
-            /* Drift Animation auf alten Geräten etwas simpler */
             animation: ambient-drift 15s infinite alternate ease-in-out; 
         }
 
@@ -182,7 +225,6 @@
             pointer-events: auto;
         }
 
-        /* VERBESSERTE LYRICS ANIMATION */
         .lyric-line {
             display: block; 
             margin: 4vh 0; 
@@ -198,7 +240,7 @@
         
         .lyrics-open .lyric-line { 
             opacity: 0.25; 
-            filter: blur(1px); /* Reduzierter Blur */
+            filter: blur(1px);
             transform: scale(0.95) translateZ(0);
         }
         
@@ -244,7 +286,6 @@
         #lyrics-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
 
         #modal-overlay {
-            /* Blur im Modal minimiert für Old-Gen Performance */
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             transition: all 0.4s ease;
@@ -265,7 +306,6 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
         
-        /* CSS Containment für Isolierung vom Layout-Tree */
         section, header, footer {
             contain: content;
         }
@@ -275,8 +315,14 @@
 
     <div class="mesh-gradient"></div>
 
-    <!-- Theme Switcher -->
-    <div class="fixed top-6 right-6 z-[110]">
+    <!-- UI Controls Oben Rechts -->
+    <div class="fixed top-6 right-6 z-[110] flex items-center gap-3">
+        <!-- Performance Toggle Button -->
+        <button id="perf-toggle" aria-label="Performance Modus" class="group p-3 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl shadow-2xl rounded-2xl border border-slate-200 dark:border-slate-700 hover:ring-2 hover:ring-green-500 transition-all active:scale-90" title="Low-End Modus (Deaktiviert Animationen)">
+            <svg id="perf-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500 transition-colors group-hover:text-green-500"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </button>
+
+        <!-- Theme Switcher -->
         <button id="theme-toggle" aria-label="Darkmode umschalten" class="group p-3 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl shadow-2xl rounded-2xl border border-slate-200 dark:border-slate-700 hover:ring-2 hover:ring-blue-500 transition-all active:scale-90">
             <span id="theme-icon-dark" class="hidden dark:block text-yellow-400 group-hover:rotate-12 transition-transform">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
@@ -599,6 +645,29 @@
             );
         }
 
+        // --- Performance Modus Logik ---
+        const perfToggle = document.getElementById('perf-toggle');
+        const perfIcon = document.getElementById('perf-icon');
+        const savedPerfMode = localStorage.getItem('perfMode');
+        
+        if (savedPerfMode === 'true') {
+            document.body.classList.add('low-end');
+            perfToggle.classList.add('ring-2', 'ring-green-500');
+            perfIcon.classList.add('text-green-500');
+        }
+
+        perfToggle.addEventListener('click', () => {
+            const isActive = document.body.classList.toggle('low-end');
+            localStorage.setItem('perfMode', isActive);
+            if (isActive) {
+                perfToggle.classList.add('ring-2', 'ring-green-500');
+                perfIcon.classList.add('text-green-500');
+            } else {
+                perfToggle.classList.remove('ring-2', 'ring-green-500');
+                perfIcon.classList.remove('text-green-500');
+            }
+        });
+
         // --- Theme Logik Portfolio ---
         const themeToggle = document.getElementById('theme-toggle');
         const html = document.documentElement;
@@ -907,6 +976,11 @@
                     }
                 }
             }
+
+            // --- PERFORMANCE CHECK: CPU-Killer-Loop überspringen ---
+            // Wenn der Low-End Modus an ist, brechen wir hier knallhart ab.
+            // Es wird kein Farbverlauf pro Wort berechnet. Die Zeile wird per CSS (oben) einfach komplett weiß.
+            if (document.body.classList.contains('low-end')) return;
 
             parsedLyrics.forEach((line, idx) => {
                 const words = tokenizeText(line.text);
