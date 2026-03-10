@@ -314,24 +314,122 @@
             contain: content;
         }
 
-        /* Tutorial Classes */
+        /* --- TUTORIAL KLASSEN FIX --- */
         .tutorial-active-element {
-            position: relative !important;
             z-index: 300 !important;
             box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.8), 0 0 15px rgba(59, 130, 246, 0.8) !important;
             border-radius: inherit;
             pointer-events: none;
+        }
+        
+        /* Das Kontrollzentrum DARF NICHT relative und weiß werden, sonst verzieht es sich! */
+        .tutorial-active-element:not(#ui-controls) {
+            position: relative !important;
             background: white;
         }
-        .dark .tutorial-active-element {
+        
+        .dark .tutorial-active-element:not(#ui-controls) {
             background: #0f172a;
+        }
+
+        #ui-controls.tutorial-active-element {
+            position: fixed !important;
+            background: transparent !important;
+            border-radius: 1rem;
+        }
+
+        /* --- QUANTUM SUPERNOVA ANIMATIONS (JAW-DROPPING IMPACT) --- */
+        .impact-media-out, .impact-text-out, .impact-lyrics-out {
+            animation: quantumCrushOut 0.65s cubic-bezier(0.5, 0, 0, 1) forwards !important;
+            will-change: transform, opacity, filter, box-shadow;
+            transform-origin: center center !important;
+        }
+        .impact-media-in, .impact-text-in, .impact-lyrics-in {
+            animation: quantumBurstIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.4) forwards !important;
+            will-change: transform, opacity, filter, drop-shadow;
+            transform-origin: center center !important;
+        }
+        
+        body.is-shaking #main-content,
+        body.is-shaking #ui-controls,
+        body.is-shaking .mesh-gradient {
+            animation: quantumShockwave 0.5s cubic-bezier(0.1, 0.9, 0.3, 1) both !important;
+            will-change: transform, filter;
+            transform-origin: center center !important;
+        }
+
+        @keyframes quantumCrushOut {
+            0% { transform: perspective(1200px) translateZ(0) scale(1); filter: blur(0) brightness(1) contrast(1); opacity: 1; }
+            20% { transform: perspective(1200px) translateZ(80px) scale(1.08); filter: blur(0) brightness(1.8) contrast(1.2); opacity: 1; box-shadow: 0 0 40px rgba(59, 130, 246, 0.6); }
+            100% { transform: perspective(1200px) translateZ(-2500px) scale(0.01); filter: blur(20px) brightness(0) contrast(3) hue-rotate(-45deg); opacity: 0; box-shadow: 0 0 0px rgba(0,0,0,0); }
+        }
+
+        @keyframes quantumBurstIn {
+            0% { transform: perspective(1200px) translateZ(-2500px) scale(0.01); filter: blur(40px) brightness(8) contrast(4) saturate(4); opacity: 0; drop-shadow(0 0 100px rgba(255, 255, 255, 1)); }
+            50% { transform: perspective(1200px) translateZ(250px) scale(1.2); filter: blur(2px) brightness(2.5) contrast(1.5) saturate(1.5); opacity: 1; drop-shadow(0 0 60px rgba(6, 182, 212, 0.8)); }
+            75% { transform: perspective(1200px) translateZ(-40px) scale(0.95); filter: blur(0) brightness(0.8) contrast(1); opacity: 1; drop-shadow(0 0 10px rgba(59, 130, 246, 0.3)); }
+            100% { transform: perspective(1200px) translateZ(0) scale(1); filter: blur(0) brightness(1) contrast(1) saturate(1); opacity: 1; drop-shadow(0 0 0px transparent); }
+        }
+
+        @keyframes quantumShockwave {
+            0% { transform: translate3d(0, 0, 0) scale(1); filter: blur(0) contrast(1) hue-rotate(0deg); }
+            10% { transform: translate3d(-15px, 15px, 0) scale(1.03); filter: blur(1px) contrast(1.6) hue-rotate(-15deg); }
+            20% { transform: translate3d(20px, -10px, 0) scale(0.97); filter: contrast(1.4) hue-rotate(15deg); }
+            30% { transform: translate3d(-25px, 15px, 0) scale(1.02); filter: blur(0.5px) contrast(1.2); }
+            40% { transform: translate3d(15px, -15px, 0) scale(1); }
+            50% { transform: translate3d(-10px, 10px, 0); filter: contrast(1) hue-rotate(0deg); }
+            60% { transform: translate3d(8px, -8px, 0); }
+            70% { transform: translate3d(-5px, 5px, 0); }
+            80% { transform: translate3d(3px, -3px, 0); }
+            90% { transform: translate3d(-1px, 1px, 0); }
+            100% { transform: translate3d(0, 0, 0); filter: blur(0) contrast(1) hue-rotate(0deg); }
+        }
+
+        /* --- EMP SHOCKWAVE EFFECT (ABSOLUTE POSITIONING VIA JS) --- */
+        #global-emp-shockwave {
+            position: absolute; 
+            top: 0;
+            left: 0;
+            width: 200px;
+            height: 200px;
+            margin-top: -100px;
+            margin-left: -100px;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 99999;
+            will-change: transform, opacity, border, box-shadow;
+        }
+
+        .trigger-emp {
+            animation: empDetonationLight 4s cubic-bezier(0.1, 0.9, 0.2, 1) forwards !important; /* Auf epische 4s verlangsamt */
+        }
+        
+        .dark .trigger-emp {
+            animation: empDetonationDark 4s cubic-bezier(0.1, 0.9, 0.2, 1) forwards !important; /* Auf epische 4s verlangsamt */
+            mix-blend-mode: screen;
+        }
+
+        @keyframes empDetonationLight {
+            0% { transform: scale(0.1); opacity: 1; border: 20px solid rgba(37, 99, 235, 1); box-shadow: 0 0 50px 20px rgba(37, 99, 235, 0.6), inset 0 0 50px rgba(37, 99, 235, 0.6); }
+            30% { opacity: 0.8; border: 8px solid rgba(147, 51, 234, 0.9); box-shadow: 0 0 100px 30px rgba(147, 51, 234, 0.5), inset 0 0 100px rgba(147, 51, 234, 0.4); }
+            100% { transform: scale(25); opacity: 0; border: 1px solid rgba(147, 51, 234, 0); box-shadow: 0 0 20px 5px transparent, inset 0 0 20px transparent; }
+        }
+
+        @keyframes empDetonationDark {
+            0% { transform: scale(0.1); opacity: 1; border: 40px solid rgba(255, 255, 255, 1); box-shadow: 0 0 100px 50px rgba(6, 182, 212, 1), inset 0 0 100px rgba(6, 182, 212, 1); }
+            30% { opacity: 0.8; border: 15px solid rgba(6, 182, 212, 0.8); box-shadow: 0 0 150px 30px rgba(168, 85, 247, 0.8), inset 0 0 150px rgba(168, 85, 247, 0.5); }
+            100% { transform: scale(25); opacity: 0; border: 1px solid rgba(59, 130, 246, 0); box-shadow: 0 0 50px 10px rgba(59, 130, 246, 0), inset 0 0 50px transparent; }
         }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen selection:bg-blue-500/30">
 
     <div class="mesh-gradient"></div>
-
+    
+    <!-- Global EMP Shockwave (Wieder direkt im Body, damit es nicht abgeschnitten wird!) -->
+    <div id="global-emp-shockwave"></div>
+    
     <!-- UI Controls Oben Rechts -->
     <div id="ui-controls" class="fixed top-2 right-2 xs:top-4 xs:right-4 sm:top-6 sm:right-6 z-[110] flex items-center gap-2 sm:gap-3 bg-transparent rounded-2xl">
         
@@ -501,7 +599,8 @@
                 </div>
             </div>
 
-            <div id="music-card-wrapper" class="hidden opacity-0 -translate-y-4 transition-all duration-300 ease-out origin-top flex justify-center">
+            <div id="music-card-wrapper" class="relative hidden opacity-0 -translate-y-4 transition-all duration-300 ease-out origin-top flex justify-center">
+                
                 <div id="main-music-card" class="glass-card offline w-full max-w-[400px] mx-auto p-4 xs:p-6 md:p-10 rounded-3xl md:rounded-[3rem] text-center relative z-10 overflow-hidden flex flex-col justify-center items-center">
                     <div id="ambient-bg"></div>
 
@@ -543,7 +642,7 @@
                         <div id="offline-icon" class="absolute text-4xl sm:text-6xl" aria-hidden="true">🌙</div>
                     </div>
 
-                    <div class="relative z-10 mb-4 sm:mb-6 text-left px-1 sm:px-2 w-full shrink-0">
+                    <div id="track-info-container" class="relative z-10 mb-4 sm:mb-6 text-left px-1 sm:px-2 w-full shrink-0">
                         <h2 id="track-title" class="text-lg xs:text-xl sm:text-2xl md:text-3xl font-extrabold text-white break-words leading-[1.1] mb-1 sm:mb-2 transition-all">Aktuell ist es ruhig...</h2>
                         <p id="track-artist" class="text-white/70 text-sm sm:text-lg font-medium">Genieße die Stille</p>
                     </div>
@@ -1325,27 +1424,9 @@
             const rawArtist = data.track.artist || "Unknown";
             const cleanArtist = rawArtist.replace(/\s*•\s*From Smart Shuffle/gi, '').trim();
             
-            if(mArtwork.getAttribute('src') !== imgUrl) {
-                mArtwork.src = imgUrl; 
-                mAmbient.style.backgroundImage = `url('${imgUrl}')`;
-            }
-            
-            if(lyricsMiniArt.getAttribute('src') !== imgUrl) {
-                lyricsMiniArt.src = imgUrl; 
-            }
-            
-            if(mTitle.innerText !== data.track.title) {
-                mTitle.innerText = data.track.title;
-                lyricsMiniTitle.innerText = data.track.title; 
-            }
-            if(mArtist.innerText !== rawArtist) {
-                mArtist.innerText = rawArtist;
-                lyricsMiniArtist.innerText = rawArtist; 
-            }
-            mText.innerText = data.provider || "Streaming";
-
             const newTrackId = data.track.title + "-" + cleanArtist;
             const isNewTrack = (newTrackId !== currentTrackId);
+            const isFirstLoad = (currentTrackId === "");
 
             if (data.track.progress_ms === lastSeenProgressMs && trackIsPlaying === isPlaying && !isNewTrack) {
                 return;
@@ -1367,93 +1448,197 @@
                 apiProgress = data.track.duration_ms;
             }
 
-            if (isNewTrack) {
-                currentTrackId = newTrackId;
-                totalMs = data.track.duration_ms || 0;
-                timeTotalEl.innerText = formatTime(totalMs);
+            // Funktion die alle DOM Elemente nach einem möglichen Animation Delay updatet
+            const applyDataChanges = (addedDelay = 0) => {
+                if(mArtwork.getAttribute('src') !== imgUrl) {
+                    mArtwork.src = imgUrl; 
+                    mAmbient.style.backgroundImage = `url('${imgUrl}')`;
+                }
                 
-                trackIsPlaying = isPlaying;
-                serverBaseProgress = apiProgress;
-                localStartTime = performance.now();
-                currentMs = apiProgress;
+                if(lyricsMiniArt.getAttribute('src') !== imgUrl) {
+                    lyricsMiniArt.src = imgUrl; 
+                }
                 
-                currentNoLyricsMessage = fallbackMessages[Math.floor(Math.random() * fallbackMessages.length)];
-                fetchExternalLyrics(data.track.title, cleanArtist);
-            } else {
-                if (!trackIsPlaying && isPlaying) {
-                    trackIsPlaying = true;
-                    serverBaseProgress = apiProgress;
+                if(mTitle.innerText !== data.track.title) {
+                    mTitle.innerText = data.track.title;
+                    lyricsMiniTitle.innerText = data.track.title; 
+                }
+                if(mArtist.innerText !== rawArtist) {
+                    mArtist.innerText = rawArtist;
+                    lyricsMiniArtist.innerText = rawArtist; 
+                }
+                mText.innerText = data.provider || "Streaming";
+
+                if (isNewTrack) {
+                    currentTrackId = newTrackId;
+                    totalMs = data.track.duration_ms || 0;
+                    timeTotalEl.innerText = formatTime(totalMs);
+                    
+                    trackIsPlaying = isPlaying;
+                    serverBaseProgress = apiProgress + addedDelay;
                     localStartTime = performance.now();
-                    currentMs = apiProgress;
-                    syncLyricsUI(true);
-                } else if (trackIsPlaying && !isPlaying) {
-                    trackIsPlaying = false;
-                    currentMs = apiProgress;
-                } else if (trackIsPlaying) {
-                    if (Math.abs(currentMs - apiProgress) > 2000) {
-                        serverBaseProgress = apiProgress;
+                    currentMs = serverBaseProgress;
+                    
+                    currentNoLyricsMessage = fallbackMessages[Math.floor(Math.random() * fallbackMessages.length)];
+                    fetchExternalLyrics(data.track.title, cleanArtist);
+                } else {
+                    if (!trackIsPlaying && isPlaying) {
+                        trackIsPlaying = true;
+                        serverBaseProgress = apiProgress + addedDelay;
                         localStartTime = performance.now();
-                        currentMs = apiProgress;
+                        currentMs = serverBaseProgress;
                         syncLyricsUI(true);
+                    } else if (trackIsPlaying && !isPlaying) {
+                        trackIsPlaying = false;
+                        currentMs = apiProgress + addedDelay;
+                    } else if (trackIsPlaying) {
+                        if (Math.abs(currentMs - (apiProgress + addedDelay)) > 2000) {
+                            serverBaseProgress = apiProgress + addedDelay;
+                            localStartTime = performance.now();
+                            currentMs = serverBaseProgress;
+                            syncLyricsUI(true);
+                        }
                     }
                 }
-            }
 
-            if (trackIsPlaying && !isAnimating) {
-                isAnimating = true;
-                lyricAnimFrame = requestAnimationFrame(animateLoop);
-            }
+                if (trackIsPlaying && !isAnimating) {
+                    isAnimating = true;
+                    lyricAnimFrame = requestAnimationFrame(animateLoop);
+                }
 
-            updateProgressUI();
+                updateProgressUI();
 
-            miniTitle.innerText = data.track.title;
-            miniIconBg.className = 'w-10 h-10 sm:w-12 sm:h-12 shrink-0 rounded-xl flex items-center justify-center transition-colors bg-green-500/10 text-green-500 active-dot';
-            
-            if(!isDashboardOpen) miniStatus.innerText = rawArtist;
-            
-            const linksContainer = document.getElementById('dynamic-links-container');
-            const noLinkEl = document.getElementById('link-none');
-            
-            linksContainer.innerHTML = '';
-            let hasLinks = false;
-            
-            const availableLinks = { ...(data.track.platform_links || {}), ...(data.track.external_urls || {}) };
-            
-            const serviceStyles = {
-                spotify: { name: 'Spotify', bg: '#1DB954' },
-                applemusic: { name: 'Apple Music', bg: '#FC3C44' },
-                youtube: { name: 'YouTube Music', bg: '#FF0000' },
-                soundcloud: { name: 'SoundCloud', bg: '#FF5500' },
-                deezer: { name: 'Deezer', bg: '#00C7F2' },
-                tidal: { name: 'Tidal', bg: '#000000' }
+                miniTitle.innerText = data.track.title;
+                miniIconBg.className = 'w-10 h-10 sm:w-12 sm:h-12 shrink-0 rounded-xl flex items-center justify-center transition-colors bg-green-500/10 text-green-500 active-dot';
+                
+                if(!isDashboardOpen) miniStatus.innerText = rawArtist;
+                
+                const linksContainer = document.getElementById('dynamic-links-container');
+                const noLinkEl = document.getElementById('link-none');
+                
+                linksContainer.innerHTML = '';
+                let hasLinks = false;
+                
+                const availableLinks = { ...(data.track.platform_links || {}), ...(data.track.external_urls || {}) };
+                
+                const serviceStyles = {
+                    spotify: { name: 'Spotify', bg: '#1DB954' },
+                    applemusic: { name: 'Apple Music', bg: '#FC3C44' },
+                    youtube: { name: 'YouTube Music', bg: '#FF0000' },
+                    soundcloud: { name: 'SoundCloud', bg: '#FF5500' },
+                    deezer: { name: 'Deezer', bg: '#00C7F2' },
+                    tidal: { name: 'Tidal', bg: '#000000' }
+                };
+
+                for (const [key, url] of Object.entries(availableLinks)) {
+                    if (!url || typeof url !== 'string' || !url.startsWith('http')) continue;
+                    hasLinks = true;
+
+                    const lowerKey = key.toLowerCase();
+                    let style = { name: key.charAt(0).toUpperCase() + key.slice(1), bg: '#3b82f6' }; 
+
+                    for (const [sKey, sValue] of Object.entries(serviceStyles)) {
+                        if (lowerKey.includes(sKey) || lowerKey === sKey) {
+                            style = sValue;
+                            break;
+                        }
+                    }
+
+                    const linkEl = document.createElement('a');
+                    linkEl.href = url;
+                    linkEl.target = '_blank';
+                    linkEl.rel = 'noopener noreferrer';
+                    linkEl.className = 'p-2 sm:p-3 rounded-xl sm:rounded-2xl text-white font-bold text-xs sm:text-sm text-center hover:brightness-110 active:scale-95 transition-all';
+                    linkEl.style.backgroundColor = style.bg;
+                    linkEl.innerText = style.name;
+
+                    linksContainer.appendChild(linkEl);
+                }
+
+                noLinkEl.style.display = hasLinks ? 'none' : 'block';
             };
 
-            for (const [key, url] of Object.entries(availableLinks)) {
-                if (!url || typeof url !== 'string' || !url.startsWith('http')) continue;
-                hasLinks = true;
+            // Fancy Animation triggern, falls wir einen neuen Song haben, es nicht der 1. Load ist und wir nicht im Potato-Modus sind
+            if (isNewTrack && !isFirstLoad && trackIsPlaying && !document.body.classList.contains('low-end')) {
+                const mediaCont = document.getElementById('media-container');
+                const infoCont = document.getElementById('track-info-container');
+                const lyricsCont = document.getElementById('lyrics-container');
+                
+                // Out Animationen starten (Quantum Crush)
+                mediaCont.classList.add('impact-media-out');
+                infoCont.classList.add('impact-text-out');
+                lyricsCont.classList.add('impact-lyrics-out');
+                
+                // Leichter Stagger, der Sog erfasst erst das Bild, dann den Text, dann die Lyrics
+                infoCont.style.animationDelay = '0.05s'; 
+                lyricsCont.style.animationDelay = '0.1s';
 
-                const lowerKey = key.toLowerCase();
-                let style = { name: key.charAt(0).toUpperCase() + key.slice(1), bg: '#3b82f6' }; 
+                setTimeout(() => {
+                    applyDataChanges(650); // Progress um 650ms korrigieren
+                    
+                    mediaCont.classList.remove('impact-media-out');
+                    infoCont.classList.remove('impact-text-out');
+                    lyricsCont.classList.remove('impact-lyrics-out');
+                    
+                    infoCont.style.animationDelay = '0s';
+                    lyricsCont.style.animationDelay = '0s';
+                    
+                    // Browser Reflow erzwingen
+                    void mediaCont.offsetWidth;
+                    
+                    // In Animationen starten (Quantum Burst)
+                    mediaCont.classList.add('impact-media-in');
+                    infoCont.classList.add('impact-text-in');
+                    lyricsCont.classList.add('impact-lyrics-in');
+                    
+                    // Leichter Stagger für den Einschlag
+                    infoCont.style.animationDelay = '0.05s';
+                    lyricsCont.style.animationDelay = '0.1s';
+                    
+                    // Shockwave und Beben triggern (Perfekt synchronisiert mit dem massiven Einschlag bei ca 50% der In-Animation)
+                    setTimeout(() => {
+                        document.body.classList.add('is-shaking');
+                        
+                        // EMP Trigger (Dynamische Berechnung der X/Y Koordinaten des Dashboards)
+                        const shockwave = document.getElementById('global-emp-shockwave');
+                        const mediaTarget = document.getElementById('media-container');
+                        
+                        if (shockwave && mediaTarget) {
+                            const rect = mediaTarget.getBoundingClientRect();
+                            const centerX = rect.left + (rect.width / 2) + window.scrollX;
+                            const centerY = rect.top + (rect.height / 2) + window.scrollY;
+                            
+                            shockwave.style.left = `${centerX}px`;
+                            shockwave.style.top = `${centerY}px`;
+                            
+                            shockwave.classList.remove('trigger-emp');
+                            void shockwave.offsetWidth; // Reflow erzwingen
+                            shockwave.classList.add('trigger-emp');
+                        }
 
-                for (const [sKey, sValue] of Object.entries(serviceStyles)) {
-                    if (lowerKey.includes(sKey) || lowerKey === sKey) {
-                        style = sValue;
-                        break;
-                    }
-                }
-
-                const linkEl = document.createElement('a');
-                linkEl.href = url;
-                linkEl.target = '_blank';
-                linkEl.rel = 'noopener noreferrer';
-                linkEl.className = 'p-2 sm:p-3 rounded-xl sm:rounded-2xl text-white font-bold text-xs sm:text-sm text-center hover:brightness-110 active:scale-95 transition-all';
-                linkEl.style.backgroundColor = style.bg;
-                linkEl.innerText = style.name;
-
-                linksContainer.appendChild(linkEl);
+                        setTimeout(() => {
+                            document.body.classList.remove('is-shaking');
+                        }, 800);
+                        
+                        // Zeitverzögerung für das Entfernen der Shockwave-Klasse auf die neuen epischen 4 Sekunden angepasst
+                        setTimeout(() => {
+                            if (shockwave) shockwave.classList.remove('trigger-emp');
+                        }, 4000);
+                        
+                    }, 400); // 400ms = exakt 50% von 800ms (der Moment des größten Overshoots)
+                    
+                    setTimeout(() => {
+                        mediaCont.classList.remove('impact-media-in');
+                        infoCont.classList.remove('impact-text-in');
+                        lyricsCont.classList.remove('impact-lyrics-in');
+                        infoCont.style.animationDelay = '0s';
+                        lyricsCont.style.animationDelay = '0s';
+                    }, 900); // Dauer von In-Animation + Stagger
+                }, 650); // Dauer von Out-Animation
+            } else {
+                // Keine Animation = Sofortiger Wechsel
+                applyDataChanges(0);
             }
-
-            noLinkEl.style.display = hasLinks ? 'none' : 'block';
         }
 
         let musicSocket = null;
