@@ -2,7 +2,7 @@
 <html lang="de" id="html-root">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Jonas Johnston | Portfolio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -24,12 +24,16 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500;800&display=swap');
         
+        html, body {
+            max-width: 100vw;
+            overflow-x: clip; 
+        }
+
         body {
             font-family: 'Inter', sans-serif;
             transition: background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1), color 0.5s;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            overflow-x: hidden;
             background-color: #020617;
         }
 
@@ -90,9 +94,11 @@
 
         /* --- AMBILIGHT GLOW EFFEKT --- */
         #ambilight-glow {
-            position: absolute; inset: -30px; z-index: -1;
+            position: absolute; 
+            inset: -15px; 
+            z-index: -1;
             background-size: cover; background-position: center;
-            filter: blur(40px) saturate(2.0) brightness(1.2); opacity: 0;
+            filter: blur(35px) saturate(2.0) brightness(1.2); opacity: 0;
             transition: opacity 1.5s ease, transform 1s ease;
             pointer-events: none; will-change: transform, opacity; border-radius: inherit;
         }
@@ -142,7 +148,6 @@
         .lyrics-open .lyric-line.active { opacity: 1; filter: blur(0px) drop-shadow(0 0 8px rgba(255,255,255,0.1)); transform: scale(1.05) translateZ(0); }
 
         /* --- LYRICS ANIMATION STYLES --- */
-        /* FIX: padding-right restlos entfernt, um Gradientenfehler bei Classic Fill zu beheben */
         .lyric-word { position: relative; display: inline-block; margin-right: 0; white-space: nowrap; will-change: background-size, transform, color, filter, opacity; font-size: clamp(0.9rem, 4vw, 2.2rem); font-weight: 800; letter-spacing: -0.02em; transition: color 0.1s linear, transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), text-shadow 0.1s linear, filter 0.1s linear, opacity 0.1s linear; }
 
         .lyrics-style-fill .lyric-word { background: linear-gradient(to right, #ffffff var(--fill-percent, 0%), rgba(255,255,255,0.2) var(--fill-percent, 0%)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
@@ -201,9 +206,6 @@
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
-        
-        section, header, footer { contain: content; }
-        #music-section { contain: none !important; }
 
         .tutorial-active-element { z-index: 300 !important; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.8), 0 0 15px rgba(59, 130, 246, 0.8) !important; border-radius: inherit; pointer-events: none; }
         .tutorial-active-element:not(#ui-controls) { position: relative !important; background: white; }
@@ -233,6 +235,19 @@
             100% { transform: scale(20) translateZ(0); opacity: 0; box-shadow: 0 0 30px 5px rgba(59, 130, 246, 0), inset 0 0 30px transparent; } 
         }
     </style>
+    
+    <script>
+        /* ==========================================================================
+           🔥 ---> HIER IST DER TIME SYNC OFFSET <--- 🔥
+           ========================================================================== 
+           Dein Problem war, dass der Wert vorher hart auf "1000" (also 1 Sekunde in
+           der Zukunft) voreingestellt war.
+           Wenn die Lyrics zu weit in der Zukunft oder Vergangenheit sind, ändere 
+           diesen Wert. Standardmäßig steht er jetzt glasklar auf 0.
+        ========================================================================== */
+        const DEFAULT_SYNC_OFFSET = -300; 
+        /* ========================================================================== */
+    </script>
 </head>
 <body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen selection:bg-blue-500/30">
 
@@ -303,7 +318,8 @@
                 Real Talk: Ausbildung & Alltag
             </h2>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 xs:gap-4 sm:gap-5 mb-3 xs:mb-4 sm:mb-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 xs:gap-4 sm:gap-5">
+                
                 <div onclick="openModal('status')" role="button" tabindex="0" class="glass-card p-4 xs:p-5 sm:p-6 rounded-2xl sm:rounded-[1.5rem] flex items-start gap-3 sm:gap-5 cursor-pointer group">
                     <div class="p-2 sm:p-3 bg-blue-500/10 text-blue-500 rounded-xl group-hover:bg-blue-500 group-hover:text-white transition-all shrink-0">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="sm:w-6 sm:h-6"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -343,10 +359,8 @@
                         <p class="text-slate-500 dark:text-slate-400 text-xs sm:text-sm leading-snug">Familie & Bester Freund Tom...</p>
                     </div>
                 </div>
-            </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 xs:gap-4 sm:gap-5">
-                <div onclick="openModal('techstack')" role="button" tabindex="0" class="glass-card p-4 xs:p-5 sm:p-6 rounded-2xl sm:rounded-[1.5rem] flex items-start gap-3 sm:gap-5 cursor-pointer group md:col-span-1">
+                <div onclick="openModal('techstack')" role="button" tabindex="0" class="glass-card p-4 xs:p-5 sm:p-6 rounded-2xl sm:rounded-[1.5rem] flex items-start gap-3 sm:gap-5 cursor-pointer group">
                     <div class="p-2 sm:p-3 bg-emerald-500/10 text-emerald-500 rounded-xl group-hover:bg-emerald-500 group-hover:text-white transition-all shrink-0">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="sm:w-6 sm:h-6"><path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/></svg>
                     </div>
@@ -356,28 +370,26 @@
                     </div>
                 </div>
 
-                <div onclick="openModal('setup')" role="button" tabindex="0" class="glass-card p-4 xs:p-5 sm:p-6 rounded-2xl sm:rounded-[1.5rem] flex items-start gap-3 sm:gap-5 cursor-pointer group md:col-span-1">
+                <div onclick="openModal('setup')" role="button" tabindex="0" class="glass-card p-4 xs:p-5 sm:p-6 rounded-2xl sm:rounded-[1.5rem] flex items-start gap-3 sm:gap-5 cursor-pointer group">
                     <div class="p-2 sm:p-3 bg-cyan-500/10 text-cyan-500 rounded-xl group-hover:bg-cyan-500 group-hover:text-white transition-all shrink-0">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="sm:w-6 sm:h-6"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
                     </div>
                     <div>
-                        <h3 class="font-bold text-base sm:text-lg mb-1">Mein Setup</h3>
-                        <p class="text-slate-500 dark:text-slate-400 text-xs sm:text-sm leading-snug">DT 770 Pro & Rockster Cross...</p>
+                        <h3 class="font-bold text-base sm:text-lg mb-1">Setup</h3>
+                        <p class="text-slate-500 dark:text-slate-400 text-xs sm:text-sm leading-snug">DT 770 Pro...</p>
                     </div>
                 </div>
 
-                <div onclick="openModal('labor')" role="button" tabindex="0" class="glass-card p-4 xs:p-5 sm:p-6 rounded-2xl sm:rounded-[1.5rem] flex items-start gap-3 sm:gap-5 cursor-pointer group md:col-span-1">
+                <div onclick="openModal('labor')" role="button" tabindex="0" class="glass-card p-4 xs:p-5 sm:p-6 rounded-2xl sm:rounded-[1.5rem] flex items-start gap-3 sm:gap-5 cursor-pointer group">
                     <div class="p-2 sm:p-3 bg-yellow-500/10 text-yellow-500 rounded-xl group-hover:bg-yellow-500 group-hover:text-white transition-all shrink-0">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="sm:w-6 sm:h-6"><path d="M10 2v7.31"/><path d="M14 9.3V1.99"/><path d="M8.5 2h7"/><path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/></svg>
                     </div>
                     <div>
-                        <h3 class="font-bold text-base sm:text-lg mb-1">Labor & Projekte</h3>
-                        <p class="text-slate-500 dark:text-slate-400 text-xs sm:text-sm leading-snug">Server, Docker & Code...</p>
+                        <h3 class="font-bold text-base sm:text-lg mb-1">Labor</h3>
+                        <p class="text-slate-500 dark:text-slate-400 text-xs sm:text-sm leading-snug">Server & Docker...</p>
                     </div>
                 </div>
-            </div>
-            
-            <div class="grid grid-cols-1 mt-3 xs:mt-4 sm:mt-5">
+
                 <div onclick="openModal('contact')" role="button" tabindex="0" class="glass-card p-4 xs:p-5 sm:p-6 rounded-2xl sm:rounded-[1.5rem] flex items-start gap-3 sm:gap-5 cursor-pointer group">
                     <div class="p-2 sm:p-3 bg-indigo-500/10 text-indigo-500 rounded-xl group-hover:bg-indigo-500 group-hover:text-white transition-all shrink-0">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="sm:w-6 sm:h-6"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
@@ -389,7 +401,7 @@
                 </div>
             </div>
             
-            <div class="text-center text-xs text-slate-500 dark:text-slate-400 mt-2">Klicke auf die Karten für Details.</div>
+            <div class="text-center text-xs text-slate-500 dark:text-slate-400 mt-3">Klicke auf die Karten für Details.</div>
         </section>
 
         <!-- MUSIC DASHBOARD INTEGRATION -->
@@ -397,7 +409,7 @@
             <h2 class="text-xl xs:text-2xl sm:text-3xl font-bold mb-2 text-blue-600 dark:text-blue-500 border-b-2 sm:border-b-4 border-blue-600 dark:border-blue-500 pb-2 sm:pb-3 inline-block break-words">
                 Was bei mir gerade läuft
             </h2>
-            <p class="text-[10px] xs:text-xs text-slate-500 dark:text-slate-400 mb-6 sm:mb-10">*Hinweis: Der Time-Sync ist dynamisch optimiert.</p>
+            <p class="text-[10px] xs:text-xs text-slate-500 dark:text-slate-400 mb-6 sm:mb-10">*Hinweis: Der Time-Sync ist auf 0ms Hardware-Latenz optimiert.</p>
             
             <div id="mini-player-toggle" onclick="toggleDashboard()" role="button" tabindex="0" class="glass-card w-full max-w-[400px] mx-auto p-3 sm:p-4 rounded-2xl sm:rounded-[2rem] flex items-center justify-between cursor-pointer group mb-4 sm:mb-6 relative z-20 hover:scale-[1.01] hover:shadow-xl transition-all">
                 <div class="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
@@ -479,6 +491,14 @@
                                     <div class="h-px w-full bg-white/10 my-1"></div>
                                     <p class="text-[9px] sm:text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1 px-1">Features</p>
                                     <button onclick="toggleCanvasVideo()" id="btn-toggle-canvas" class="text-left text-xs sm:text-sm text-green-400 px-2 py-1.5 rounded hover:bg-white/10 transition-colors font-bold">Canvas: AN</button>
+                                    
+                                    <!-- LIVE SYNC OFFSET CONTROL -->
+                                    <div class="h-px w-full bg-white/10 my-1"></div>
+                                    <p class="text-[9px] sm:text-[10px] uppercase tracking-wider font-bold text-blue-400 mb-1 px-1">Live Sync Offset</p>
+                                    <div class="px-2 py-1 flex items-center gap-2">
+                                        <input type="range" id="sync-slider" min="-1000" max="1000" step="50" value="-300" class="w-full h-1 bg-slate-600 rounded-lg appearance-none cursor-pointer">
+                                        <span id="sync-value" class="text-[10px] text-white font-mono w-8 text-right">-300</span>
+                                    </div>
                                 </div>
                                 
                                 <button onclick="toggleLyrics(false)" aria-label="Lyrics schließen" class="p-1.5 sm:p-2 hover:bg-white/10 rounded-full transition-colors text-white shrink-0">
@@ -488,6 +508,7 @@
                         </div>
 
                         <div class="relative flex-1 overflow-hidden mask-image-gradient w-full max-w-2xl mx-auto">
+                            <!-- Hier werden die Animation Classes appliziert -->
                             <div id="lyrics-container" class="absolute inset-0 overflow-y-auto text-left w-full h-full pb-6 sm:pb-10 lyrics-style-fill">
                                 <div id="lyrics-content" class="transition-all flex flex-col items-start w-full min-h-full"></div>
                             </div>
@@ -1066,17 +1087,15 @@
             }
         }
 
-        // --- PHONETISCHER VOKAL-ALGORITHMUS V5 (STUDIO LEVEL) ---
         function getCharWeight(char) {
             const c = char.toLowerCase();
-            if ('aeiouyäöü'.includes(c)) return 3.5; // Vokale werden extrem lang gehalten
+            if ('aeiouyäöü'.includes(c)) return 3.5; 
             if ('mnglsz'.includes(c)) return 1.5; 
             if ('tkpbgd'.includes(c)) return 0.5; 
-            if ('\n\r\t.,!? '.includes(c)) return 0.0; // Interpunktion/Leerzeichen haben ZERO Singzeit
+            if ('\n\r\t.,!? '.includes(c)) return 0.0; 
             return 1.0; 
         }
 
-        // --- DER PERFEKTE HYBRID-PARSER: ELEKTRISK + MY DEFENDER ---
         function parseLrc(lrcString) {
             const lines = lrcString.split('\n');
             const lineRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/;
@@ -1159,11 +1178,10 @@
                     tok.cleanText = tok.text.replace(/\s+$/, '');
                     tok.trailingSpace = tok.text.slice(tok.cleanText.length);
                     
-                    // Phonetisches Gewicht berechnen (Satzzeichen ignorieren)
                     let pureText = tok.cleanText.replace(/[.,!?]/g, '');
                     tok.weight = 0;
                     for (let c of pureText) tok.weight += getCharWeight(c);
-                    if (tok.weight === 0) tok.weight = 0.5; // Fallback
+                    if (tok.weight === 0) tok.weight = 0.5; 
                     
                     tok.isPhraseEnd = /[.,!?]$/.test(tok.cleanText) || (idx === line.tokens.length - 1);
                     lineWeight += tok.weight;
@@ -1171,7 +1189,7 @@
 
                 if (!line.hasWordTimings && line.tokens.length > 0) {
                     let naturalSingingTime = lineWeight * avgCharTime;
-                    let maxAvailableTime = timeToNextLine * 0.8; 
+                    let maxAvailableTime = timeToNextLine * 0.85; 
                     
                     let scale = 1.0;
                     if (naturalSingingTime > maxAvailableTime) {
@@ -1195,25 +1213,19 @@
                         currentOffsetMs += tok.duration + microPause; 
                     }
                 } else if (line.hasWordTimings) {
-                    // DER HYBRID FIX V5 (Elektrisk Raps vs. My Defender Balladen Pausen)
                     for (let j = 0; j < line.tokens.length; j++) {
                         let tok = line.tokens[j];
                         let nextTok = line.tokens[j+1];
                         
                         let rawGap = nextTok ? (nextTok.timeMs - tok.timeMs) : (nextLine ? (nextLine.timeMs - tok.timeMs) : 2000);
                         
-                        // Das absolute, physikalische Maximum, das ein Mensch dieses Wort singen kann
-                        let maxLogicalSingTime = tok.weight * avgCharTime * 1.5; 
+                        let maxLogicalSingTime = tok.weight * 200; 
 
                         if (rawGap > 1000 || tok.isPhraseEnd) {
-                            // My Defender Modus: Ende eines Satzes oder riesige Lücke -> Harte Atempause!
-                            // Die Duration wird massiv beschnitten, der Rest der Lücke bleibt echte Pause.
-                            tok.duration = Math.min(rawGap * 0.4, maxLogicalSingTime * 1.5);
+                            tok.duration = Math.min(rawGap * 0.4, maxLogicalSingTime);
                         } else if (rawGap > 400) {
-                            // Großes Gap, aber kein Satzende -> Wahrscheinlich Belt-Note.
                             tok.duration = Math.min(rawGap * 0.7, maxLogicalSingTime);
                         } else {
-                            // Elektrisk Modus: Schneller Flow (<400ms) -> Lücke blind füllen (Legato)
                             tok.duration = rawGap;
                         }
                         
@@ -1223,7 +1235,6 @@
             }
         }
 
-        // --- DER FIX FÜR ZERSTÜCKELTE WÖRTER UND ÜBERLAPPUNGEN ---
         function renderLyrics(fallbackText) {
             if (parsedLyrics.length === 0) {
                 const displayMsg = fallbackText || currentNoLyricsMessage;
@@ -1236,7 +1247,6 @@
                 return;
             }
             
-            // FIX: Natürliche Leerzeichen bleiben außerhalb der Spans. Perfekter Mobile-Word-Wrap, keine Überlappungen mehr!
             lyricsContent.innerHTML = '<div class="w-full pt-[40vh] pb-[40vh] px-2 sm:px-4">' + parsedLyrics.map((line, idx) => {
                 return `<div id="lyric-line-${idx}" class="lyric-line">` + 
                     line.tokens.map((tok, wIdx) => {
@@ -1264,9 +1274,7 @@
         function syncLyricsUI(forceScroll = false, forceRefresh = false) {
             if (parsedLyrics.length === 0 || (!mainMusicCard.classList.contains('lyrics-open') && !forceRefresh)) return;
 
-            // FIX: FEST VERANKERTER STUDIO OFFSET OHNE SLIDER (Dein ermittelter 1000ms Wert).
-            const FIXED_SYNC_OFFSET = 1200;
-            const syncMs = currentMs + FIXED_SYNC_OFFSET; 
+            const syncMs = currentMs + DEFAULT_SYNC_OFFSET; 
 
             let newActiveIdx = -1;
             for (let i = 0; i < parsedLyrics.length; i++) {
@@ -1315,7 +1323,7 @@
 
                         let tokProgress = 0;
                         if (syncMs >= tok.timeMs + tok.duration) {
-                            tokProgress = 1; // Animation 100% fertig -> Steht still für die berechnete Pause (My Defender)
+                            tokProgress = 1; 
                         } else if (syncMs > tok.timeMs) {
                             tokProgress = (syncMs - tok.timeMs) / tok.duration; 
                         }
@@ -1334,7 +1342,6 @@
                         let currentTokWeightPassed = 0;
                         
                         for(let cIdx=0; cIdx<tokLen; cIdx++) {
-                            // Verhindert NaN Fehler, falls ein Char 0 Weight hat (wie Kommas)
                             let cWeight = getCharWeight(tok.cleanText[cIdx]);
                             if (cWeight === 0 && tok.weight > 0) cWeight = tok.weight * 0.05; 
                             
@@ -1358,9 +1365,6 @@
                             currentTokWeightPassed += cWeight;
                         }
                         
-                        // FIX FÜR DEN CLASSIC FILL GRAFIK-BUG:
-                        // Die Hintergrund-Gradienten-Füllung wird jetzt komplett von den Buchstaben entkoppelt!
-                        // Sie verläuft stur und butterweich in der Zeit (tokProgress), was das Zerschneiden bei unterschiedlich breiten Buchstaben verhindert.
                         wordSpan.style.setProperty('--fill-percent', `${tokProgress * 100}%`);
                     });
                 } else {
@@ -1498,6 +1502,8 @@
                 mHeader.className = "relative z-10 text-[8px] xs:text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] xs:tracking-[0.4em] mb-3 sm:mb-4 md:mb-6 transition-all shrink-0";
                 mTitle.innerText = "Aktuell ist es ruhig...";
                 mArtist.innerText = "Genieße die Stille";
+                mAmbient.style.backgroundImage = "none";
+                mGlow.style.backgroundImage = "none";
                 mDot.className = "h-1.5 w-1.5 xs:h-2 xs:w-2 rounded-full bg-blue-500";
                 mText.innerText = "Zen Mode";
                 miniTitle.innerText = "Dashboard minimiert";
@@ -1543,7 +1549,6 @@
             }
             lastSeenProgressMs = data.track.progress_ms;
 
-            // FIX: DataAge Limit-Befreiung (Der 40-Sekunden Bug-Fix)
             let serverTimestamp = data.timestamp || data.updated_at || data.fetched_at || (data.track && data.track.timestamp);
             let dataAge = 0;
             
@@ -1554,10 +1559,10 @@
                 
                 let rawAge = getTrueDateNow() - st;
                 
-                // Kein Abschneiden mehr. Egal wie alt der Cache ist, wir addieren ihn brutal auf den Status, 
-                // um sofort in der Gegenwart zu sein!
-                if (rawAge > 0) {
+                if (rawAge >= 0 && rawAge <= 30000) {
                     dataAge = rawAge;
+                } else {
+                    dataAge = 0;
                 }
             }
 
@@ -1666,6 +1671,19 @@
                 linksContainer.innerHTML = '';
                 let hasLinks = false;
                 const availableLinks = { ...(data.track.platform_links || {}), ...(data.track.external_urls || {}) };
+
+                // SPOTIFY GARANTIE: Erzwinge Spotify Link aus der Root-URL oder URI!
+                let mainSpotifyUrl = data.track.url;
+                if (!mainSpotifyUrl && data.track.uri && data.track.uri.startsWith('spotify:')) {
+                    const uriParts = data.track.uri.split(':');
+                    if (uriParts.length >= 3) {
+                        mainSpotifyUrl = `https://open.spotify.com/${uriParts[1]}/${uriParts[2]}`;
+                    }
+                }
+                if (mainSpotifyUrl && !availableLinks.spotify) {
+                    availableLinks.spotify = mainSpotifyUrl;
+                }
+
                 const serviceStyles = {
                     spotify: { name: 'Spotify', bg: '#1DB954' },
                     applemusic: { name: 'Apple Music', bg: '#FC3C44' },
@@ -1675,11 +1693,23 @@
                     tidal: { name: 'Tidal', bg: '#000000' }
                 };
 
-                for (const [key, url] of Object.entries(availableLinks)) {
-                    if (!url || typeof url !== 'string' || !url.startsWith('http')) continue;
+                for (let [key, url] of Object.entries(availableLinks)) {
+                    if (!url || typeof url !== 'string') continue;
+                    
+                    // URI Konverter für rohe Spotify URIs
+                    if (url.startsWith('spotify:')) {
+                        const uriParts = url.split(':');
+                        if (uriParts.length >= 3) {
+                            url = `https://open.spotify.com/${uriParts[1]}/${uriParts[2]}`;
+                        }
+                    }
+
+                    if (!url.startsWith('http')) continue;
+                    
                     hasLinks = true;
                     const lowerKey = key.toLowerCase();
                     let style = { name: key.charAt(0).toUpperCase() + key.slice(1), bg: '#3b82f6' }; 
+
                     for (const [sKey, sValue] of Object.entries(serviceStyles)) {
                         if (lowerKey.includes(sKey) || lowerKey === sKey) {
                             style = sValue;
@@ -1743,7 +1773,10 @@
             if (musicSocket && musicSocket.readyState === WebSocket.OPEN) return; 
             musicSocket = new WebSocket('wss://npc-api.aikins.xyz/v1/users/gamingpig/ws');
             musicSocket.onopen = () => {
-                fetch('https://npc-api.aikins.xyz/v1/users/gamingpig/now').then(r => r.text()).then(text => text ? updateMusicUI(JSON.parse(text)) : null).catch(err => console.error("Socket fetch error:", err));
+                fetch('https://npc-api.aikins.xyz/v1/users/gamingpig/now')
+                    .then(r => r.text())
+                    .then(text => text ? updateMusicUI(JSON.parse(text)) : null)
+                    .catch(err => console.error("Socket fetch error:", err));
             };
             musicSocket.onmessage = (e) => {
                 try {
@@ -1756,19 +1789,25 @@
 
         setInterval(() => {
             if (musicSocket && musicSocket.readyState === WebSocket.OPEN) return;
-            fetch('https://npc-api.aikins.xyz/v1/users/gamingpig/now').then(r => r.text()).then(text => text ? updateMusicUI(JSON.parse(text)) : null).catch(() => {});
+            fetch('https://npc-api.aikins.xyz/v1/users/gamingpig/now')
+                .then(r => r.text())
+                .then(text => text ? updateMusicUI(JSON.parse(text)) : null)
+                .catch(() => {});
         }, 5000);
 
         document.addEventListener("visibilitychange", () => {
             if (document.visibilityState === "visible") {
-                fetch('https://npc-api.aikins.xyz/v1/users/gamingpig/now').then(r => r.text()).then(text => text ? updateMusicUI(JSON.parse(text)) : null).catch(err => console.error("Visibility fetch error:", err));
+                fetch('https://npc-api.aikins.xyz/v1/users/gamingpig/now')
+                    .then(r => r.text())
+                    .then(text => text ? updateMusicUI(JSON.parse(text)) : null)
+                    .catch(err => console.error("Visibility fetch error:", err));
                 if (!musicSocket || musicSocket.readyState === WebSocket.CLOSED) connectMusicSocket();
             }
         });
 
         // Initialize
-        setLyricsStyle(currentLyricsStyle);
         (async () => {
+            setLyricsStyle(currentLyricsStyle); 
             await syncWorldwideTime();
             if (trackIsPlaying && !isAnimating) {
                 isAnimating = true;
