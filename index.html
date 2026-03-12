@@ -1265,7 +1265,7 @@
             if (parsedLyrics.length === 0 || (!mainMusicCard.classList.contains('lyrics-open') && !forceRefresh)) return;
 
             // FIX: FEST VERANKERTER STUDIO OFFSET OHNE SLIDER (Dein ermittelter 1000ms Wert).
-            const FIXED_SYNC_OFFSET = 2200;
+            const FIXED_SYNC_OFFSET = 1200;
             const syncMs = currentMs + FIXED_SYNC_OFFSET; 
 
             let newActiveIdx = -1;
