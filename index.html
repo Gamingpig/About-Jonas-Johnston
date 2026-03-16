@@ -90,7 +90,6 @@
             -webkit-backdrop-filter: blur(25px) saturate(1.5); backdrop-filter: blur(25px) saturate(1.5);
             transition: box-shadow 0.4s ease, max-width 0.5s cubic-bezier(0.2, 1, 0.3, 1), min-height 0.4s ease;
         }
-        /* HIER IST DER FIX FÜR DAS MANUELLE SCROLLEN AUF KLEINEN GERÄTEN */
         #main-music-card.lyrics-open { max-width: 800px !important; min-height: 80vh !important; }
         #main-music-card #track-title { color: #ffffff !important; }
         #main-music-card #track-artist { color: rgba(255, 255, 255, 0.7) !important; }
@@ -241,7 +240,16 @@
     </style>
     
     <script>
+        /* ==========================================================================
+           🔥 ---> HIER IST DER TIME SYNC OFFSET <--- 🔥
+           ========================================================================== 
+           Dein Problem war, dass der Wert vorher hart auf "1000" (also 1 Sekunde in
+           der Zukunft) voreingestellt war.
+           Wenn die Lyrics zu weit in der Zukunft oder Vergangenheit sind, ändere 
+           diesen Wert. Standardmäßig steht er jetzt glasklar auf -300.
+        ========================================================================== */
         const DEFAULT_SYNC_OFFSET = -300; 
+        /* ========================================================================== */
     </script>
 </head>
 <body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen selection:bg-blue-500/30">
@@ -1026,7 +1034,7 @@
             currentLyricsStyle = style;
             localStorage.setItem('lyricsStyle', style);
             
-            lyricsContainer.className = `absolute inset-0 overflow-y-auto overflow-x-hidden text-left w-full h-full pb-6 sm:pb-10 lyrics-style-${style}`;
+            lyricsContainer.className = `absolute inset-0 overflow-y-auto overflow-x-hidden text-left w-full h-full lyrics-style-${style}`;
             
             ['fill', 'bounce', 'fade', 'blur', 'wave', 'wave-char', 'neon', 'typewriter', 'pop', 'karaoke', 'glitch', 'flip', 'zoom', 'kinetic', 'hellfire', 'hologram', 'matrix'].forEach(s => {
                 const btn = document.getElementById(`btn-style-${s}`);
@@ -1321,6 +1329,7 @@
                         syncBadge.innerText = "Lyrics: not Synced yet";
                         syncBadge.className = "px-1.5 xxs:px-2 py-1 mr-1 xxs:mr-2 bg-orange-500/20 text-orange-400 text-[8px] xxs:text-[10px] sm:text-xs rounded font-bold shrink-0 whitespace-nowrap";
                     }
+                    // HIER IST DAS MASSIVE PADDING FÜR MANUELLES SCROLLEN (UNSYNCED)
                     lyricsContent.innerHTML = `
                     <div class="w-full flex-1 pt-[10vh] pb-[50vh] px-1 sm:px-4 md:px-8">
                         <p class="text-xs xxs:text-sm xs:text-base sm:text-2xl md:text-3xl font-bold text-white/90 leading-relaxed whitespace-pre-wrap text-left break-words">${escapeHTML(displayMsg.trim())}</p>
@@ -1330,6 +1339,7 @@
                     lyricsContent.innerHTML = `<div class="w-full flex-1 flex flex-col justify-center min-h-full py-8 px-2 sm:px-4 md:px-8"><h2 class="text-sm xxs:text-lg xs:text-xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight leading-[1.2] text-left break-words">${escapeHTML(displayMsg)}</h2></div>`;
                 } else {
                     if (syncBadge) syncBadge.style.display = 'none';
+                    // HIER AUCH DAS PADDING FALLS ETWAS FEHLSCHLÄGT
                     lyricsContent.innerHTML = `<div class="w-full flex-1 pt-[10vh] pb-[50vh] px-2 sm:px-4 md:px-8"><p class="text-xs xxs:text-sm xs:text-base sm:text-2xl md:text-3xl font-bold text-white/80 leading-relaxed whitespace-pre-wrap text-left break-words">${escapeHTML(displayMsg.trim())}</p></div>`;
                 }
                 return;
@@ -1526,78 +1536,135 @@
 
         function cleanStringForAPI(str) {
             if (!str) return "";
-            return str.replace(/\([^)]*feat\.[^)]*\)/gi, '')
-                      .replace(/\[[^\]]*feat\.[^\]]*\]/gi, '')
-                      .replace(/\([^)]*remaster[^)]*\)/gi, '')
-                      .replace(/\[[^\]]*remaster[^\]]*\]/gi, '')
-                      .replace(/-.*remaster.*/gi, '')
-                      .replace(/-.*radio edit.*/gi, '')
-                      .replace(/feat\..*/gi, '')
+            // GLASKLAR: Löscht brutal alle Klammern und alles nach einem Bindestrich!
+            return str.replace(/\([^)]*\)/g, '') 
+                      .replace(/\[[^\]]*\]/g, '') 
+                      .replace(/\s*-.*$/g, '')    
                       .trim();
         }
 
-        async function fetchExternalLyrics(title, artist, isRetry = false) {
+        // NEUE FUNKTION: Prüft, ob das Suchergebnis WIRKLICH zum Song passt (Verhindert Halluzinationen)
+        function isStrictMatch(apiTrack, apiArtist, searchTrack, searchArtist) {
+            if (!apiTrack || !apiArtist || !searchTrack || !searchArtist) return false;
+
+            const cleanStr = (s) => s.toLowerCase().replace(/[^\w\s]/gi, '').trim();
+
+            const t1 = cleanStr(apiTrack);
+            const a1 = cleanStr(apiArtist);
+            const t2 = cleanStr(searchTrack);
+            const a2 = cleanStr(searchArtist);
+
+            // Track Match: Einer muss den anderen komplett beinhalten
+            const trackMatch = t1 === t2 || t1.includes(t2) || t2.includes(t1);
+
+            // Artist Match: Wir splitten die gesuchten Wörter. 
+            // So stellt sich sicher, dass "Fabian" nicht einfach bei "Lara Fabian" oder ähnlichen Fakes greift!
+            const a1Words = a1.split(' ');
+            const a2Words = a2.split(' ');
+
+            // Mindestens ein echtes, relevantes Wort des gesuchten Artists muss exakt im Ergebnis-Artist auftauchen.
+            const hasCommonArtistWord = a2Words.some(w => w.length > 2 && a1Words.includes(w)) || a1 === a2 || a1.includes(a2);
+
+            return trackMatch && hasCommonArtistWord;
+        }
+
+        async function fetchExternalLyrics(title, artist) {
             const fetchId = ++currentFetchId; 
             
-            if (!isRetry) {
-                lyricsContent.innerHTML = `
-                    <div class="w-full flex-1 flex flex-col justify-center min-h-full py-16 px-2 sm:px-4 md:px-8">
-                        <h2 class="text-xl xxs:text-2xl xs:text-3xl md:text-4xl font-extrabold text-white/30 tracking-tight leading-[1.2] text-left animate-pulse">
-                            Suche Lyrics...
-                        </h2>
-                    </div>`;
-                parsedLyrics = [];
-                currentLyricIndex = -1;
-            }
-            
-            try {
-                const query = new URLSearchParams({ track_name: title, artist_name: artist });
-                const res = await fetch(`https://lrclib.net/api/get?${query}`);
-                
-                if (fetchId !== currentFetchId) return; 
-                
-                if (res.ok) {
-                    const text = await res.text();
-                    const data = text ? JSON.parse(text) : null;
+            lyricsContent.innerHTML = `
+                <div class="w-full flex-1 flex flex-col justify-center min-h-full py-16 px-2 sm:px-4 md:px-8">
+                    <h2 class="text-xl xxs:text-2xl xs:text-3xl md:text-4xl font-extrabold text-white/30 tracking-tight leading-[1.2] text-left animate-pulse">
+                        Suche Lyrics...
+                    </h2>
+                </div>`;
+            parsedLyrics = [];
+            currentLyricIndex = -1;
+
+            const checkAndRenderStrict = (data, searchT, searchA) => {
+                if (!data) return false;
+
+                if (Array.isArray(data)) {
+                    // Filtere gnadenlos falsche Treffer aus (Anti-Halluzination)
+                    const validMatches = data.filter(d => isStrictMatch(d.trackName, d.artistName, searchT, searchA));
                     
-                    if (data && data.syncedLyrics && !isDummyLyrics(data.syncedLyrics)) {
+                    if (validMatches.length > 0) {
+                        const best = validMatches.find(d => d.syncedLyrics) || validMatches[0];
+                        if (best.syncedLyrics && !isDummyLyrics(best.syncedLyrics)) {
+                            parseLrc(best.syncedLyrics);
+                            renderLyrics();
+                            syncLyricsUI(true);
+                            return true;
+                        } else if (best.plainLyrics && !isDummyLyrics(best.plainLyrics)) {
+                            renderLyrics(best.plainLyrics, true);
+                            return true;
+                        }
+                    }
+                } else {
+                    // Direkter /get Treffer
+                    if (data.syncedLyrics && !isDummyLyrics(data.syncedLyrics)) {
                         parseLrc(data.syncedLyrics);
                         renderLyrics();
                         syncLyricsUI(true);
-                        return;
-                    } else if (!isRetry && data && data.plainLyrics && !isDummyLyrics(data.plainLyrics)) {
-                        // Wir haben Text, aber KEINE Timestamps. Wir werfen einen Fehler, um den Retry zu erzwingen!
-                        throw new Error("Only plain lyrics found, try cleaning title");
-                    } else if (isRetry && data && data.plainLyrics && !isDummyLyrics(data.plainLyrics)) {
-                        // Auch der Retry hat keine Timestamps gebracht, dann geben wir uns mit Unsynced zufrieden
+                        return true;
+                    } else if (data.plainLyrics && !isDummyLyrics(data.plainLyrics)) {
                         renderLyrics(data.plainLyrics, true);
-                        return;
+                        return true;
                     }
                 }
-                throw new Error("LRCLIB leer");
+                return false;
+            };
+
+            const cleanT = cleanStringForAPI(title);
+            let cleanA = cleanStringForAPI(artist);
+            // GLASKLAR: Komma-Split wurde komplett entfernt, um den vollen Artist-Namen zu behalten!
+
+            try {
+                // 1. Genaue Suche /get
+                let res = await fetch(`https://lrclib.net/api/get?` + new URLSearchParams({ track_name: title, artist_name: artist }));
+                if (fetchId !== currentFetchId) return;
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    if (checkAndRenderStrict(data, title, artist)) return;
+                }
+
+                // 2. Genaue Suche /get mit bereinigten Namen
+                if (cleanT !== title || cleanA !== artist) {
+                    let resClean = await fetch(`https://lrclib.net/api/get?` + new URLSearchParams({ track_name: cleanT, artist_name: cleanA }));
+                    if (fetchId !== currentFetchId) return;
+                    if (resClean.ok) {
+                        const dataClean = await resClean.json();
+                        if (checkAndRenderStrict(dataClean, cleanT, cleanA)) return;
+                    }
+                }
+
+                // 3. Search API mit Original-Namen
+                let searchRes = await fetch(`https://lrclib.net/api/search?q=` + encodeURIComponent(`${title} ${artist}`));
+                if (fetchId !== currentFetchId) return;
+                
+                if (searchRes.ok) {
+                    const searchData = await searchRes.json();
+                    if (checkAndRenderStrict(searchData, title, artist)) return;
+                }
+
+                // 4. Search API mit bereinigten Namen
+                if (cleanT !== title || cleanA !== artist) {
+                    searchRes = await fetch(`https://lrclib.net/api/search?q=` + encodeURIComponent(`${cleanT} ${cleanA}`));
+                    if (fetchId !== currentFetchId) return;
+                    
+                    if (searchRes.ok) {
+                        const searchData = await searchRes.json();
+                        if (checkAndRenderStrict(searchData, cleanT, cleanA)) return;
+                    }
+                }
+
+                throw new Error("LRCLIB completely failed - No valid strict match found");
             } catch (err) {
                 if (fetchId !== currentFetchId) return; 
                 
-                if (!isRetry) {
-                    const cleanT = cleanStringForAPI(title);
-                    const cleanA = cleanStringForAPI(artist);
-                    if (cleanT !== title || cleanA !== artist) {
-                        currentFetchId--; // Fetch ID behalten, damit es nicht abgebrochen wird
-                        return fetchExternalLyrics(cleanT, cleanA, true);
-                    }
-                }
-                
-                try {
-                    const fallbackRes = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
-                    if(fallbackRes.ok) {
-                        const fallbackText = await fallbackRes.text();
-                        const fallbackData = fallbackText ? JSON.parse(fallbackText) : null;
-                        if(fallbackData && fallbackData.lyrics && !isDummyLyrics(fallbackData.lyrics)) {
-                            renderLyrics(fallbackData.lyrics, true);
-                            return;
-                        }
-                    }
-                } catch(e) {}
+                // GLASKLAR: OVH API WURDE KOMPLETT GELÖSCHT.
+                // OVH liefert bei Covers oft das Original zurück, ohne den Künstler im Response zu nennen.
+                // Das verhindert eine Validierung und erzeugt lebensgefährliche Halluzinationen!
                 renderLyrics(currentNoLyricsMessage);
             }
         }
@@ -1800,6 +1867,7 @@
                 let hasLinks = false;
                 const availableLinks = { ...(data.track.platform_links || {}), ...(data.track.external_urls || {}) };
 
+                // SPOTIFY GARANTIE: Erzwinge Spotify Link aus der Root-URL oder URI!
                 let mainSpotifyUrl = data.track.url;
                 if (!mainSpotifyUrl && data.track.uri && data.track.uri.startsWith('spotify:')) {
                     const uriParts = data.track.uri.split(':');
@@ -1823,6 +1891,7 @@
                 for (let [key, url] of Object.entries(availableLinks)) {
                     if (!url || typeof url !== 'string') continue;
                     
+                    // URI Konverter für rohe Spotify URIs
                     if (url.startsWith('spotify:')) {
                         const uriParts = url.split(':');
                         if (uriParts.length >= 3) {
