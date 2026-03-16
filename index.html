@@ -86,10 +86,12 @@
         }
         
         #main-music-card {
-            background: rgba(15, 23, 42, 0.85) !important; border-color: rgba(255, 255, 255, 0.1) !important;
-            transition: box-shadow 0.4s ease, max-width 0.5s cubic-bezier(0.2, 1, 0.3, 1);
+            background: rgba(15, 23, 42, 0.4) !important; border-color: rgba(255, 255, 255, 0.15) !important;
+            -webkit-backdrop-filter: blur(25px) saturate(1.5); backdrop-filter: blur(25px) saturate(1.5);
+            transition: box-shadow 0.4s ease, max-width 0.5s cubic-bezier(0.2, 1, 0.3, 1), min-height 0.4s ease;
         }
-        #main-music-card.lyrics-open { max-width: 800px !important; }
+        /* HIER IST DER FIX FÜR DAS MANUELLE SCROLLEN AUF KLEINEN GERÄTEN */
+        #main-music-card.lyrics-open { max-width: 800px !important; min-height: 80vh !important; }
         #main-music-card #track-title { color: #ffffff !important; }
         #main-music-card #track-artist { color: rgba(255, 255, 255, 0.7) !important; }
 
@@ -123,8 +125,8 @@
         .p5 { left: 90%; animation-duration: 4.5s; animation-delay: 1.5s; } .p6 { left: 20%; animation-duration: 5.5s; animation-delay: 3s; }
         .p7 { left: 80%; animation-duration: 4s; animation-delay: 2.5s; width: 5px; height: 5px; } .p8 { left: 40%; animation-duration: 6.5s; animation-delay: 0.8s; }
 
-        #ambient-bg { position: absolute; inset: -50px; z-index: 0; background-size: cover; background-position: center; filter: blur(24px) brightness(0.5) saturate(1.2); opacity: 0; transition: opacity 1s ease; transform: scale(1.1) translateZ(0); pointer-events: none; will-change: transform, opacity; }
-        .playing #ambient-bg { opacity: 0.8; animation: ambient-drift 15s infinite alternate ease-in-out; }
+        #ambient-bg { position: absolute; inset: -50px; z-index: 0; background-size: cover; background-position: center; filter: blur(35px) brightness(0.75) saturate(1.8); opacity: 0; transition: opacity 1s ease; transform: scale(1.1) translateZ(0); pointer-events: none; will-change: transform, opacity; }
+        .playing #ambient-bg { opacity: 1; animation: ambient-drift 15s infinite alternate ease-in-out; }
         @keyframes ambient-drift { 0% { transform: scale(1.1) translate(0, 0) translateZ(0); } 100% { transform: scale(1.2) translate(-5px, 5px) translateZ(0); } }
 
         .playing #track-title, .playing #track-artist { text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
@@ -149,7 +151,7 @@
         .lyrics-open .lyric-line.active { opacity: 1; filter: blur(0px) drop-shadow(0 0 8px rgba(255,255,255,0.1)); transform: scale(1.05) translateZ(0); }
 
         /* --- LYRICS ANIMATION STYLES --- */
-        .lyric-word { position: relative; display: inline-block; margin-right: 0; white-space: nowrap; will-change: background-size, transform, color, filter, opacity; font-size: clamp(0.9rem, 4vw, 2.2rem); font-weight: 800; letter-spacing: -0.02em; transition: color 0.1s linear, transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), text-shadow 0.1s linear, filter 0.1s linear, opacity 0.1s linear; }
+        .lyric-word { position: relative; display: inline-block; margin-right: 0; white-space: nowrap; will-change: background-size, transform, color, filter, opacity; font-size: 14px; font-size: clamp(0.75rem, 4vw, 2.2rem); font-weight: 800; letter-spacing: -0.02em; transition: color 0.1s linear, transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), text-shadow 0.1s linear, filter 0.1s linear, opacity 0.1s linear; }
 
         .lyrics-style-fill .lyric-word { background: linear-gradient(to right, #ffffff var(--fill-percent, 0%), rgba(255,255,255,0.2) var(--fill-percent, 0%)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
         .lyrics-style-bounce .lyric-word { color: rgba(255, 255, 255, 0.3); } .lyrics-style-bounce .lyric-word.word-passed { color: rgba(255, 255, 255, 0.7); } .lyrics-style-bounce .lyric-word.word-active { color: #ffffff; transform: scale(1.15) translateY(-4px); text-shadow: 0 4px 15px rgba(255, 255, 255, 0.6); z-index: 10; }
@@ -195,7 +197,8 @@
         }
 
         #lyrics-overlay, #lyrics-container { overflow: hidden; will-change: transform, opacity; }
-        #lyrics-container { overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
+        /* HIER IST DAS MANUELLE SCROLLEN UND TOUCH FIX VERANKERT */
+        #lyrics-container { overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
         #lyrics-container::-webkit-scrollbar { width: 4px; }
         #lyrics-container::-webkit-scrollbar-track { background: transparent; }
         #lyrics-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
@@ -425,7 +428,7 @@
                     <div class="absolute inset-0 rounded-[inherit] overflow-hidden z-0 pointer-events-none">
                         <div id="ambient-bg"></div>
                         <video id="canvas-video" class="absolute inset-0 w-full h-full object-cover z-[1] opacity-0 transition-opacity duration-1000" loop muted playsinline></video>
-                        <div class="absolute inset-0 bg-slate-900/60 z-[2] mix-blend-multiply"></div>
+                        <div class="absolute inset-0 bg-black/10 z-[2]"></div>
                     </div>
 
                     <div id="ambilight-glow"></div>
@@ -441,8 +444,8 @@
                         <div class="particle p8" style="left:45%; animation-delay:3.1s"></div>
                     </div>
 
-                    <div id="lyrics-overlay" class="absolute inset-0 bg-slate-900/95 backdrop-blur-3xl rounded-[1.5rem] xxs:rounded-3xl md:rounded-[3rem] flex-col p-3 xxs:p-4 xs:p-6 md:p-8 z-40 transition-all duration-500 opacity-0 translate-y-8 pointer-events-none flex">
-                        <div class="flex items-center justify-between gap-1.5 xxs:gap-2 sm:gap-4 mb-3 xxs:mb-4 sm:mb-6 shrink-0 w-full bg-white/5 p-1.5 xxs:p-2 xs:p-3 sm:p-4 rounded-lg xxs:rounded-xl sm:rounded-2xl border border-white/10 relative">
+                    <div id="lyrics-overlay" class="absolute inset-0 bg-black/40 backdrop-blur-2xl rounded-[1.5rem] xxs:rounded-3xl md:rounded-[3rem] flex-col p-2 xxs:p-3 xs:p-6 md:p-8 z-40 transition-all duration-500 opacity-0 translate-y-8 pointer-events-none flex">
+                        <div class="flex items-center justify-between gap-1.5 xxs:gap-2 sm:gap-4 mb-3 xxs:mb-4 sm:mb-6 shrink-0 w-full bg-white/10 p-1.5 xxs:p-2 xs:p-3 sm:p-4 rounded-lg xxs:rounded-xl sm:rounded-2xl border border-white/10 relative">
                             <div class="flex items-center gap-1.5 xxs:gap-2 sm:gap-3 min-w-0 flex-1">
                                 <img id="lyrics-mini-art" src="" alt="Album Art" class="w-6 h-6 xxs:w-8 xxs:h-8 sm:w-10 sm:h-10 rounded shadow-md object-cover shrink-0">
                                 <div class="text-left min-w-0">
@@ -452,12 +455,17 @@
                             </div>
                             
                             <div class="relative flex items-center">
+                                <!-- ECHTER MANUAL SCROLL BUTTON -->
+                                <div id="sync-status-badge" class="px-1.5 xxs:px-2 py-1 mr-1 xxs:mr-2 bg-blue-500/20 text-blue-400 text-[8px] xxs:text-[10px] sm:text-xs rounded font-bold shrink-0 whitespace-nowrap hidden">
+                                    Lyrics: Synced
+                                </div>
+
                                 <button onclick="toggleLyricsSettings()" aria-label="Lyrics Einstellungen" class="p-1 xxs:p-1.5 sm:p-2 hover:bg-white/10 rounded-full transition-colors text-white shrink-0 mr-0.5 xxs:mr-1 sm:mr-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="xxs:w-4 xxs:h-4 sm:w-5 sm:h-5"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/></svg>
                                 </button>
                                 
-                                <div id="lyrics-settings-menu" class="absolute top-full right-0 mt-2 xxs:mt-3 sm:mt-4 bg-slate-800/95 backdrop-blur-xl border border-white/10 rounded-xl p-1.5 xxs:p-2 sm:p-3 shadow-2xl hidden flex-col gap-1.5 min-w-[140px] xxs:min-w-[160px] sm:min-w-[180px] z-[60] origin-top-right transition-all opacity-0 scale-95 max-h-[350px] overflow-y-auto">
-                                    <p class="text-[8px] xxs:text-[9px] sm:text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1 px-1 sticky top-0 bg-slate-800/95 backdrop-blur-xl py-1 z-10">Animation Style</p>
+                                <div id="lyrics-settings-menu" class="absolute top-full right-0 mt-2 xxs:mt-3 sm:mt-4 bg-slate-900/80 backdrop-blur-2xl border border-white/10 rounded-xl p-1.5 xxs:p-2 sm:p-3 shadow-2xl hidden flex-col gap-1.5 min-w-[140px] xxs:min-w-[160px] sm:min-w-[180px] z-[60] origin-top-right transition-all opacity-0 scale-95 max-h-[350px] overflow-y-auto">
+                                    <p class="text-[8px] xxs:text-[9px] sm:text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1 px-1 sticky top-0 bg-transparent py-1 z-10">Animation Style</p>
                                     <button onclick="setLyricsStyle('fill')" id="btn-style-fill" class="text-left text-[10px] xxs:text-xs sm:text-sm text-white px-2 py-1.5 rounded hover:bg-white/10 transition-colors">Classic Fill</button>
                                     <button onclick="setLyricsStyle('bounce')" id="btn-style-bounce" class="text-left text-[10px] xxs:text-xs sm:text-sm text-white px-2 py-1.5 rounded hover:bg-white/10 transition-colors">Bouncy Pop</button>
                                     <button onclick="setLyricsStyle('fade')" id="btn-style-fade" class="text-left text-[10px] xxs:text-xs sm:text-sm text-white px-2 py-1.5 rounded hover:bg-white/10 transition-colors">Smooth Fade</button>
@@ -486,7 +494,10 @@
                                     
                                     <!-- LIVE SYNC OFFSET CONTROL -->
                                     <div class="h-px w-full bg-white/10 my-1"></div>
-                                    <p class="text-[8px] xxs:text-[9px] sm:text-[10px] uppercase tracking-wider font-bold text-blue-400 mb-1 px-1">Live Sync Offset</p>
+                                    <div class="flex justify-between items-center px-1 mb-1">
+                                        <p class="text-[8px] xxs:text-[9px] sm:text-[10px] uppercase tracking-wider font-bold text-blue-400">Live Sync Offset</p>
+                                        <button onclick="resetSyncOffset(this)" class="text-[7px] xxs:text-[8px] bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 px-1.5 py-0.5 rounded transition-colors uppercase font-bold tracking-wider active:scale-95">API Re-Sync</button>
+                                    </div>
                                     <div class="px-2 py-1 flex items-center gap-2">
                                         <input type="range" id="sync-slider" min="-1000" max="1000" step="50" value="-300" class="w-full h-1 bg-slate-600 rounded-lg appearance-none cursor-pointer">
                                         <span id="sync-value" class="text-[8px] xxs:text-[10px] text-white font-mono w-6 xxs:w-8 text-right">-300</span>
@@ -501,13 +512,13 @@
 
                         <div class="relative flex-1 overflow-hidden mask-image-gradient w-full max-w-2xl mx-auto">
                             <!-- Hier werden die Animation Classes appliziert -->
-                            <div id="lyrics-container" class="absolute inset-0 overflow-y-auto text-left w-full h-full pb-4 xxs:pb-6 sm:pb-10 lyrics-style-fill">
+                            <div id="lyrics-container" class="absolute inset-0 overflow-y-auto overflow-x-hidden text-left w-full h-full pb-6 sm:pb-10 lyrics-style-fill">
                                 <div id="lyrics-content" class="transition-all flex flex-col items-start w-full min-h-full"></div>
                             </div>
                         </div>
                     </div>
 
-                    <div id="music-picker" class="absolute inset-0 bg-slate-900/95 rounded-[1.5rem] xxs:rounded-3xl md:rounded-[3rem] hidden flex-col justify-center p-4 xxs:p-6 sm:p-10 gap-2 xxs:gap-4 z-50">
+                    <div id="music-picker" class="absolute inset-0 bg-black/60 backdrop-blur-xl rounded-[1.5rem] xxs:rounded-3xl md:rounded-[3rem] hidden flex-col justify-center p-4 xxs:p-6 sm:p-10 gap-2 xxs:gap-4 z-50">
                         <p class="text-[8px] xxs:text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1 sm:mb-2">Service wählen</p>
                         <div id="dynamic-links-container" class="flex flex-col gap-1.5 xxs:gap-2 sm:gap-3 w-full max-h-[120px] xxs:max-h-[140px] sm:max-h-[180px] overflow-y-auto" style="scrollbar-width: thin;"></div>
                         <p id="link-none" class="text-white/50 text-[10px] xxs:text-xs sm:text-sm font-bold" style="display: none;">Keine Links gefunden</p>
@@ -758,6 +769,11 @@
                 localStorage.setItem('perfMode', 'false');
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            // HIER IST DER RELOAD FIX NACH DEM TUTORIAL
+            setTimeout(() => {
+                window.location.reload();
+            }, 300);
         }
 
         function showTutorialStep(index) {
@@ -942,6 +958,50 @@
         const btnToggleCanvas = document.getElementById('btn-toggle-canvas');
         let currentCanvasUrl = null;
 
+        // --- LIVE SYNC OFFSET FIX ---
+        const syncSlider = document.getElementById('sync-slider');
+        const syncValueEl = document.getElementById('sync-value');
+        let liveSyncOffset = typeof DEFAULT_SYNC_OFFSET !== 'undefined' ? DEFAULT_SYNC_OFFSET : -300;
+        
+        if (syncSlider && syncValueEl) {
+            syncSlider.value = liveSyncOffset;
+            syncValueEl.innerText = liveSyncOffset;
+            
+            syncSlider.addEventListener('input', (e) => {
+                liveSyncOffset = parseInt(e.target.value);
+                syncValueEl.innerText = liveSyncOffset;
+                // Erzwinge sofortiges Update der Lyrics beim Schieben
+                syncLyricsUI(true, true); 
+            });
+        }
+
+        window.resetSyncOffset = async function(btn) {
+            const title = mTitle ? mTitle.innerText : null;
+            const artist = mArtist ? mArtist.innerText : null;
+            
+            const originalText = btn ? btn.innerText : "API Re-Sync";
+            
+            if (btn) {
+                btn.innerText = "SYNCING...";
+                btn.classList.add('opacity-50', 'pointer-events-none', 'animate-pulse');
+            }
+            
+            if (title && artist && title !== "Aktuell ist es ruhig...") {
+                await fetchExternalLyrics(title, artist);
+            }
+            
+            liveSyncOffset = typeof DEFAULT_SYNC_OFFSET !== 'undefined' ? DEFAULT_SYNC_OFFSET : -300;
+            if (syncSlider) syncSlider.value = liveSyncOffset;
+            if (syncValueEl) syncValueEl.innerText = liveSyncOffset;
+            
+            syncLyricsUI(true, true);
+            
+            if (btn) {
+                btn.innerText = originalText;
+                btn.classList.remove('opacity-50', 'pointer-events-none', 'animate-pulse');
+            }
+        };
+
         window.toggleLyricsSettings = function() {
             isLyricsSettingsOpen = !isLyricsSettingsOpen;
             if (isLyricsSettingsOpen) {
@@ -1037,14 +1097,13 @@
         let localClockOffset = 0;
         let isTimeSynced = false;
 
-        // SCROLL-DETECT LOGIC (So the auto-scroll doesn't fight you)
+        // --- MANUELLER SCROLL FIX UND AUTO-SCROLL TOGGLE ---
         let isUserScrolling = false;
         let userScrollTimeout = null;
         
         function handleUserScroll() {
             isUserScrolling = true;
             clearTimeout(userScrollTimeout);
-            // Nach 3 Sekunden Inaktivität schaltet sich der Auto-Scroll wieder ein
             userScrollTimeout = setTimeout(() => {
                 isUserScrolling = false;
             }, 3000);
@@ -1105,10 +1164,15 @@
 
         function getCharWeight(char) {
             const c = char.toLowerCase();
-            if ('aeiouyäöü'.includes(c)) return 3.5; 
-            if ('mnglsz'.includes(c)) return 1.5; 
-            if ('tkpbgd'.includes(c)) return 0.5; 
-            if ('\n\r\t.,!? '.includes(c)) return 0.0; 
+            // Universal Vowels (inkl. Skandinavisch, Spanisch, Französisch etc.)
+            if (/[aeiouyæøåœäöüáéíóúàèìòùâêîôûãẽĩõũ]/.test(c)) return 3.5; 
+            // Weiche Konsonanten / Sonoranten
+            if (/[mnlrwjvszñç]/.test(c)) return 1.5; 
+            // Harte Konsonanten / Plosive
+            if (/[tkpbgdcqfxh]/.test(c)) return 0.5; 
+            // Satzzeichen & Leerzeichen
+            if (/[\n\r\t.,!? ]/.test(c)) return 0.0; 
+            // Fallback für alle anderen Zeichen (Kyrillisch, Asiatisch etc.)
             return 1.0; 
         }
 
@@ -1252,25 +1316,35 @@
         }
 
         function renderLyrics(fallbackText, isUnsyncedData = false) {
+            const syncBadge = document.getElementById('sync-status-badge');
             if (parsedLyrics.length === 0) {
                 const displayMsg = fallbackText || currentNoLyricsMessage;
                 const isCustomFallback = fallbackMessages.includes(displayMsg);
                 
-                // Für reine "Unsynced" Lyrics: Erlaube normales Scrollen durch ordentliches Padding.
                 if (isUnsyncedData) {
+                    if (syncBadge) {
+                        syncBadge.style.display = 'inline-block';
+                        syncBadge.innerText = "Lyrics: not Synced yet";
+                        syncBadge.className = "px-1.5 xxs:px-2 py-1 mr-1 xxs:mr-2 bg-orange-500/20 text-orange-400 text-[8px] xxs:text-[10px] sm:text-xs rounded font-bold shrink-0 whitespace-nowrap";
+                    }
                     lyricsContent.innerHTML = `
-                    <div class="w-full flex-1 py-10 xxs:py-[10vh] px-2 sm:px-4 md:px-8">
-                        <div class="inline-block px-2 py-1 bg-white/10 rounded-lg text-[8px] xxs:text-[10px] text-white/50 mb-4 font-bold tracking-widest uppercase">
-                            Manuelles Scrollen (Unsynced)
-                        </div>
-                        <p class="text-sm xxs:text-base xs:text-lg sm:text-2xl md:text-3xl font-bold text-white/90 leading-relaxed whitespace-pre-wrap text-left break-words">${escapeHTML(displayMsg.trim())}</p>
+                    <div class="w-full flex-1 py-4 px-1 sm:px-4 md:px-8">
+                        <p class="text-xs xxs:text-sm xs:text-base sm:text-2xl md:text-3xl font-bold text-white/90 leading-relaxed whitespace-pre-wrap text-left break-words">${escapeHTML(displayMsg.trim())}</p>
                     </div>`;
                 } else if (isCustomFallback) {
-                    lyricsContent.innerHTML = `<div class="w-full flex-1 flex flex-col justify-center min-h-full py-16 px-2 sm:px-4 md:px-8"><h2 class="text-lg xxs:text-xl xs:text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight leading-[1.2] text-left break-words">${escapeHTML(displayMsg)}</h2></div>`;
+                    if (syncBadge) syncBadge.style.display = 'none';
+                    lyricsContent.innerHTML = `<div class="w-full flex-1 flex flex-col justify-center min-h-full py-8 px-2 sm:px-4 md:px-8"><h2 class="text-sm xxs:text-lg xs:text-xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight leading-[1.2] text-left break-words">${escapeHTML(displayMsg)}</h2></div>`;
                 } else {
-                    lyricsContent.innerHTML = `<div class="w-full flex-1 py-10 px-2 sm:px-4 md:px-8"><p class="text-sm xxs:text-base xs:text-lg sm:text-2xl md:text-3xl font-bold text-white/80 leading-relaxed whitespace-pre-wrap text-left break-words">${escapeHTML(displayMsg.trim())}</p></div>`;
+                    if (syncBadge) syncBadge.style.display = 'none';
+                    lyricsContent.innerHTML = `<div class="w-full flex-1 py-8 px-2 sm:px-4 md:px-8"><p class="text-xs xxs:text-sm xs:text-base sm:text-2xl md:text-3xl font-bold text-white/80 leading-relaxed whitespace-pre-wrap text-left break-words">${escapeHTML(displayMsg.trim())}</p></div>`;
                 }
                 return;
+            }
+            
+            if (syncBadge) {
+                syncBadge.style.display = 'inline-block';
+                syncBadge.innerText = "Lyrics: Synced";
+                syncBadge.className = "px-1.5 xxs:px-2 py-1 mr-1 xxs:mr-2 bg-blue-500/20 text-blue-400 text-[8px] xxs:text-[10px] sm:text-xs rounded font-bold shrink-0 whitespace-nowrap";
             }
             
             lyricsContent.innerHTML = '<div class="w-full pt-[40vh] pb-[40vh] px-2 sm:px-4">' + parsedLyrics.map((line, idx) => {
@@ -1287,7 +1361,7 @@
         }
 
         function scrollToLyricElement(el) {
-            // Nur automatisch scrollen, wenn der User nicht selbst scrollt. (Das war die ungeschönte Wahrheit deines Fehlers)
+            // Wenn der User scrollt, blockieren wir die Animation
             if (!el || !lyricsContainer || isUserScrolling) return;
             const containerHeight = lyricsContainer.clientHeight;
             const elementTop = el.offsetTop;
@@ -1301,7 +1375,8 @@
         function syncLyricsUI(forceScroll = false, forceRefresh = false) {
             if (parsedLyrics.length === 0 || (!mainMusicCard.classList.contains('lyrics-open') && !forceRefresh)) return;
 
-            const syncMs = currentMs + DEFAULT_SYNC_OFFSET; 
+            // HIER WIRD JETZT DER DYNAMISCHE WERT VOM SLIDER GENUTZT
+            const syncMs = currentMs + liveSyncOffset; 
 
             let newActiveIdx = -1;
             for (let i = 0; i < parsedLyrics.length; i++) {
@@ -1319,8 +1394,7 @@
                     const activeEl = document.getElementById(`lyric-line-${currentLyricIndex}`);
                     if (activeEl) {
                         activeEl.classList.add('active');
-                        // Hier wird das Scrollen aufgerufen (geschützt durch isUserScrolling in der Funktion)
-                        if (forceScroll || true) scrollToLyricElement(activeEl);
+                        if (forceScroll || !isUserScrolling) scrollToLyricElement(activeEl);
                     }
                 }
             }
@@ -1457,17 +1531,31 @@
                    lower.includes("kein text");
         }
 
-        async function fetchExternalLyrics(title, artist) {
+        function cleanStringForAPI(str) {
+            if (!str) return "";
+            return str.replace(/\([^)]*feat\.[^)]*\)/gi, '')
+                      .replace(/\[[^\]]*feat\.[^\]]*\]/gi, '')
+                      .replace(/\([^)]*remaster[^)]*\)/gi, '')
+                      .replace(/\[[^\]]*remaster[^\]]*\]/gi, '')
+                      .replace(/-.*remaster.*/gi, '')
+                      .replace(/-.*radio edit.*/gi, '')
+                      .replace(/feat\..*/gi, '')
+                      .trim();
+        }
+
+        async function fetchExternalLyrics(title, artist, isRetry = false) {
             const fetchId = ++currentFetchId; 
             
-            lyricsContent.innerHTML = `
-                <div class="w-full flex-1 flex flex-col justify-center min-h-full py-16 px-2 sm:px-4 md:px-8">
-                    <h2 class="text-xl xxs:text-2xl xs:text-3xl md:text-4xl font-extrabold text-white/30 tracking-tight leading-[1.2] text-left animate-pulse">
-                        Lade Text...
-                    </h2>
-                </div>`;
-            parsedLyrics = [];
-            currentLyricIndex = -1;
+            if (!isRetry) {
+                lyricsContent.innerHTML = `
+                    <div class="w-full flex-1 flex flex-col justify-center min-h-full py-16 px-2 sm:px-4 md:px-8">
+                        <h2 class="text-xl xxs:text-2xl xs:text-3xl md:text-4xl font-extrabold text-white/30 tracking-tight leading-[1.2] text-left animate-pulse">
+                            Suche Timestamps...
+                        </h2>
+                    </div>`;
+                parsedLyrics = [];
+                currentLyricIndex = -1;
+            }
             
             try {
                 const query = new URLSearchParams({ track_name: title, artist_name: artist });
@@ -1478,13 +1566,17 @@
                 if (res.ok) {
                     const text = await res.text();
                     const data = text ? JSON.parse(text) : null;
+                    
                     if (data && data.syncedLyrics && !isDummyLyrics(data.syncedLyrics)) {
                         parseLrc(data.syncedLyrics);
                         renderLyrics();
                         syncLyricsUI(true);
                         return;
-                    } else if (data && data.plainLyrics && !isDummyLyrics(data.plainLyrics)) {
-                        // Es ist Unsynced!
+                    } else if (!isRetry && data && data.plainLyrics && !isDummyLyrics(data.plainLyrics)) {
+                        // Wir haben Text, aber KEINE Timestamps. Wir werfen einen Fehler, um den Retry zu erzwingen!
+                        throw new Error("Only plain lyrics found, try cleaning title");
+                    } else if (isRetry && data && data.plainLyrics && !isDummyLyrics(data.plainLyrics)) {
+                        // Auch der Retry hat keine Timestamps gebracht, dann geben wir uns mit Unsynced zufrieden
                         renderLyrics(data.plainLyrics, true);
                         return;
                     }
@@ -1493,13 +1585,21 @@
             } catch (err) {
                 if (fetchId !== currentFetchId) return; 
                 
+                if (!isRetry) {
+                    const cleanT = cleanStringForAPI(title);
+                    const cleanA = cleanStringForAPI(artist);
+                    if (cleanT !== title || cleanA !== artist) {
+                        currentFetchId--; // Fetch ID behalten, damit es nicht abgebrochen wird
+                        return fetchExternalLyrics(cleanT, cleanA, true);
+                    }
+                }
+                
                 try {
                     const fallbackRes = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
                     if(fallbackRes.ok) {
                         const fallbackText = await fallbackRes.text();
                         const fallbackData = fallbackText ? JSON.parse(fallbackText) : null;
                         if(fallbackData && fallbackData.lyrics && !isDummyLyrics(fallbackData.lyrics)) {
-                            // API.lyrics.ovh liefert meist plain lyrics
                             renderLyrics(fallbackData.lyrics, true);
                             return;
                         }
@@ -1509,45 +1609,58 @@
             }
         }
 
+        let offlineTimeout = null;
+
         function updateMusicUI(data) {
             const hasTrack = data && data.track;
             const isPlaying = data && data.status === "playing";
 
             if (!hasTrack || !isPlaying) {
-                mainMusicCard.classList.add('offline');
-                mainMusicCard.classList.remove('playing');
-                if(mainMusicCard.classList.contains('lyrics-open')) toggleLyrics(false);
-                mHeader.innerText = "Gamingpig is Offline";
-                mHeader.className = "relative z-10 text-[6px] xxs:text-[8px] xs:text-[10px] font-black text-blue-500 uppercase tracking-[0.1em] xxs:tracking-[0.2em] xs:tracking-[0.4em] mb-2 xxs:mb-3 sm:mb-4 md:mb-6 transition-all shrink-0";
-                mTitle.innerText = "Aktuell ist es ruhig...";
-                mArtist.innerText = "Genieße die Stille";
-                mAmbient.style.backgroundImage = "none";
-                mGlow.style.backgroundImage = "none";
-                mDot.className = "h-1 w-1 xxs:h-1.5 xxs:w-1.5 xs:h-2 xs:w-2 rounded-full bg-blue-500";
-                mText.innerText = "Zen Mode";
-                miniTitle.innerText = "Dashboard minimiert";
-                miniIconBg.className = "w-8 h-8 xxs:w-10 xxs:h-10 sm:w-12 sm:h-12 shrink-0 rounded-lg xxs:rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center transition-colors";
-                if(!isDashboardOpen) miniStatus.innerText = "Klicken zum Öffnen";
-                
-                lyricsMiniTitle.innerText = "Offline";
-                lyricsMiniArtist.innerText = "Keine Musik";
-                lyricsMiniArt.removeAttribute('src'); 
-                
-                canvasVideo.removeAttribute('src');
-                currentCanvasUrl = null;
-                btnToggleCanvas.classList.add('opacity-50', 'cursor-not-allowed', 'text-slate-400');
-                btnToggleCanvas.classList.remove('text-green-400');
-                btnToggleCanvas.innerText = "Canvas Video (N/A)";
-                canvasVideo.classList.add('opacity-0');
-                
                 trackIsPlaying = false;
-                currentTrackId = "";
-                parsedLyrics = [];
-                currentLyricIndex = -1; 
-                currentMs = 0;
-                totalMs = 0;
-                updateProgressUI();
+                if (!offlineTimeout) {
+                    offlineTimeout = setTimeout(() => {
+                        mainMusicCard.classList.add('offline');
+                        mainMusicCard.classList.remove('playing');
+                        if(mainMusicCard.classList.contains('lyrics-open')) toggleLyrics(false);
+                        mHeader.innerText = "Gamingpig is Offline";
+                        mHeader.className = "relative z-10 text-[6px] xxs:text-[8px] xs:text-[10px] font-black text-blue-500 uppercase tracking-[0.1em] xxs:tracking-[0.2em] xs:tracking-[0.4em] mb-2 xxs:mb-3 sm:mb-4 md:mb-6 transition-all shrink-0";
+                        mTitle.innerText = "Aktuell ist es ruhig...";
+                        mArtist.innerText = "Genieße die Stille";
+                        mAmbient.style.backgroundImage = "none";
+                        mGlow.style.backgroundImage = "none";
+                        mArtwork.removeAttribute('src');
+                        mDot.className = "h-1 w-1 xxs:h-1.5 xxs:w-1.5 xs:h-2 xs:w-2 rounded-full bg-blue-500";
+                        mText.innerText = "Zen Mode";
+                        miniTitle.innerText = "Dashboard minimiert";
+                        miniIconBg.className = "w-8 h-8 xxs:w-10 xxs:h-10 sm:w-12 sm:h-12 shrink-0 rounded-lg xxs:rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center transition-colors";
+                        if(!isDashboardOpen) miniStatus.innerText = "Klicken zum Öffnen";
+                        
+                        lyricsMiniTitle.innerText = "Offline";
+                        lyricsMiniArtist.innerText = "Keine Musik";
+                        lyricsMiniArt.removeAttribute('src'); 
+                        
+                        canvasVideo.removeAttribute('src');
+                        currentCanvasUrl = null;
+                        btnToggleCanvas.classList.add('opacity-50', 'cursor-not-allowed', 'text-slate-400');
+                        btnToggleCanvas.classList.remove('text-green-400');
+                        btnToggleCanvas.innerText = "Canvas Video (N/A)";
+                        canvasVideo.classList.add('opacity-0');
+                        
+                        currentTrackId = "";
+                        parsedLyrics = [];
+                        currentLyricIndex = -1; 
+                        currentMs = 0;
+                        totalMs = 0;
+                        updateProgressUI();
+                        offlineTimeout = null;
+                    }, 2500);
+                }
                 return;
+            }
+
+            if (offlineTimeout) {
+                clearTimeout(offlineTimeout);
+                offlineTimeout = null;
             }
 
             mainMusicCard.classList.remove('offline');
@@ -1563,10 +1676,12 @@
             const isNewTrack = (newTrackId !== currentTrackId);
             const isFirstLoad = (currentTrackId === "");
 
-            if (data.track.progress_ms === lastSeenProgressMs && trackIsPlaying === isPlaying && !isNewTrack) {
+            let currentApiProgress = data.progress_ms !== undefined ? data.progress_ms : (data.track && data.track.progress_ms) || 0;
+
+            if (currentApiProgress === lastSeenProgressMs && trackIsPlaying === isPlaying && !isNewTrack) {
                 return;
             }
-            lastSeenProgressMs = data.track.progress_ms;
+            lastSeenProgressMs = currentApiProgress;
 
             let serverTimestamp = data.timestamp || data.updated_at || data.fetched_at || (data.track && data.track.timestamp);
             let dataAge = 0;
@@ -1585,17 +1700,18 @@
                 }
             }
 
-            let apiProgress = (data.track.progress_ms || 0);
+            let apiProgress = currentApiProgress;
             if (isPlaying) {
                 apiProgress += dataAge; 
             }
             
-            if (data.track.duration_ms && apiProgress > data.track.duration_ms) {
-                apiProgress = data.track.duration_ms;
+            const trackDuration = data.track.duration_ms || data.duration_ms || 0;
+            if (trackDuration && apiProgress > trackDuration) {
+                apiProgress = trackDuration;
             }
 
             const applyDataChanges = (addedDelay = 0) => {
-                if(mArtwork.getAttribute('src') !== imgUrl) {
+                if(mArtwork.getAttribute('src') !== imgUrl || mAmbient.style.backgroundImage === "none" || mAmbient.style.backgroundImage === "") {
                     mArtwork.src = imgUrl; 
                     mAmbient.style.backgroundImage = `url('${imgUrl}')`;
                     mGlow.style.backgroundImage = `url('${imgUrl}')`;
@@ -1641,7 +1757,7 @@
 
                 if (isNewTrack) {
                     currentTrackId = newTrackId;
-                    totalMs = data.track.duration_ms || 0;
+                    totalMs = trackDuration;
                     timeTotalEl.innerText = formatTime(totalMs);
                     
                     trackIsPlaying = isPlaying;
