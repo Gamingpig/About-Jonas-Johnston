@@ -455,7 +455,7 @@
                             </div>
                             
                             <div class="relative flex items-center">
-                                <!-- ECHTER MANUAL SCROLL BUTTON -->
+                                <!-- ECHTER MANUAL SCROLL STATUS BADGE -->
                                 <div id="sync-status-badge" class="px-1.5 xxs:px-2 py-1 mr-1 xxs:mr-2 bg-blue-500/20 text-blue-400 text-[8px] xxs:text-[10px] sm:text-xs rounded font-bold shrink-0 whitespace-nowrap hidden">
                                     Lyrics: Synced
                                 </div>
@@ -770,7 +770,6 @@
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
             
-            // HIER IST DER RELOAD FIX NACH DEM TUTORIAL
             setTimeout(() => {
                 window.location.reload();
             }, 300);
@@ -1164,15 +1163,10 @@
 
         function getCharWeight(char) {
             const c = char.toLowerCase();
-            // Universal Vowels (inkl. Skandinavisch, Spanisch, Französisch etc.)
             if (/[aeiouyæøåœäöüáéíóúàèìòùâêîôûãẽĩõũ]/.test(c)) return 3.5; 
-            // Weiche Konsonanten / Sonoranten
             if (/[mnlrwjvszñç]/.test(c)) return 1.5; 
-            // Harte Konsonanten / Plosive
             if (/[tkpbgdcqfxh]/.test(c)) return 0.5; 
-            // Satzzeichen & Leerzeichen
             if (/[\n\r\t.,!? ]/.test(c)) return 0.0; 
-            // Fallback für alle anderen Zeichen (Kyrillisch, Asiatisch etc.)
             return 1.0; 
         }
 
@@ -1328,7 +1322,7 @@
                         syncBadge.className = "px-1.5 xxs:px-2 py-1 mr-1 xxs:mr-2 bg-orange-500/20 text-orange-400 text-[8px] xxs:text-[10px] sm:text-xs rounded font-bold shrink-0 whitespace-nowrap";
                     }
                     lyricsContent.innerHTML = `
-                    <div class="w-full flex-1 py-4 px-1 sm:px-4 md:px-8">
+                    <div class="w-full flex-1 pt-[10vh] pb-[50vh] px-1 sm:px-4 md:px-8">
                         <p class="text-xs xxs:text-sm xs:text-base sm:text-2xl md:text-3xl font-bold text-white/90 leading-relaxed whitespace-pre-wrap text-left break-words">${escapeHTML(displayMsg.trim())}</p>
                     </div>`;
                 } else if (isCustomFallback) {
@@ -1336,7 +1330,7 @@
                     lyricsContent.innerHTML = `<div class="w-full flex-1 flex flex-col justify-center min-h-full py-8 px-2 sm:px-4 md:px-8"><h2 class="text-sm xxs:text-lg xs:text-xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight leading-[1.2] text-left break-words">${escapeHTML(displayMsg)}</h2></div>`;
                 } else {
                     if (syncBadge) syncBadge.style.display = 'none';
-                    lyricsContent.innerHTML = `<div class="w-full flex-1 py-8 px-2 sm:px-4 md:px-8"><p class="text-xs xxs:text-sm xs:text-base sm:text-2xl md:text-3xl font-bold text-white/80 leading-relaxed whitespace-pre-wrap text-left break-words">${escapeHTML(displayMsg.trim())}</p></div>`;
+                    lyricsContent.innerHTML = `<div class="w-full flex-1 pt-[10vh] pb-[50vh] px-2 sm:px-4 md:px-8"><p class="text-xs xxs:text-sm xs:text-base sm:text-2xl md:text-3xl font-bold text-white/80 leading-relaxed whitespace-pre-wrap text-left break-words">${escapeHTML(displayMsg.trim())}</p></div>`;
                 }
                 return;
             }
@@ -1375,7 +1369,6 @@
         function syncLyricsUI(forceScroll = false, forceRefresh = false) {
             if (parsedLyrics.length === 0 || (!mainMusicCard.classList.contains('lyrics-open') && !forceRefresh)) return;
 
-            // HIER WIRD JETZT DER DYNAMISCHE WERT VOM SLIDER GENUTZT
             const syncMs = currentMs + liveSyncOffset; 
 
             let newActiveIdx = -1;
@@ -1550,7 +1543,7 @@
                 lyricsContent.innerHTML = `
                     <div class="w-full flex-1 flex flex-col justify-center min-h-full py-16 px-2 sm:px-4 md:px-8">
                         <h2 class="text-xl xxs:text-2xl xs:text-3xl md:text-4xl font-extrabold text-white/30 tracking-tight leading-[1.2] text-left animate-pulse">
-                            Suche Timestamps...
+                            Suche Lyrics...
                         </h2>
                     </div>`;
                 parsedLyrics = [];
