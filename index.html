@@ -1243,8 +1243,18 @@
 
             for (let i = 0; i < parsedLyrics.length; i++) {
                 let line = parsedLyrics[i];
-                let nextLine = parsedLyrics[i+1];
-                let timeToNextLine = nextLine ? (nextLine.timeMs - line.timeMs) : 5000;
+                
+                // Finde die WAHRE nächste Zeile (ignoriere Adlibs die sofort überlappen)
+                let timeToNextLine = 5000;
+                let trueNextLineTime = line.timeMs + 5000;
+                for (let k = i + 1; k < parsedLyrics.length; k++) {
+                    let diff = parsedLyrics[k].timeMs - line.timeMs;
+                    if (diff > 150) { // Mindestens 150ms in der Zukunft
+                        timeToNextLine = diff;
+                        trueNextLineTime = parsedLyrics[k].timeMs;
+                        break;
+                    }
+                }
                 
                 let lineWeight = 0;
                 line.tokens.forEach((tok, idx) => {
@@ -1315,9 +1325,12 @@
                             }
                         }
                         
-                        // KEIN HARD-LIMIT MEHR, DAS DIE GESAMTZEIT SPRENGT!
-                        // Wenn der Part extrem schnell ist, darf tok.duration auch unter 30ms fallen.
-                        
+                        // ABSOLUTE STRICT BOUND: Darf niemals die nächste Zeile überschneiden
+                        let maxAllowedDuration = trueNextLineTime - tok.timeMs;
+                        if (tok.duration > maxAllowedDuration * 0.95) {
+                            tok.duration = Math.max(10, maxAllowedDuration * 0.95);
+                        }
+
                         currentOffsetMs += tok.duration + microPause; 
                     }
                 } else if (line.hasWordTimings) {
@@ -1325,19 +1338,25 @@
                         let tok = line.tokens[j];
                         let nextTok = line.tokens[j+1];
                         
-                        let rawGap = nextTok ? (nextTok.timeMs - tok.timeMs) : (nextLine ? (nextLine.timeMs - tok.timeMs) : 2000);
+                        let rawGap = nextTok ? (nextTok.timeMs - tok.timeMs) : (trueNextLineTime - tok.timeMs);
+                        if (rawGap < 0) rawGap = 50;
                         
-                        let maxLogicalSingTime = tok.weight * 200; 
+                        let maxLogicalSingTime = tok.weight * 250; 
 
                         if (rawGap > 1000 || tok.isPhraseEnd) {
-                            tok.duration = Math.min(rawGap * 0.4, maxLogicalSingTime);
+                            tok.duration = Math.min(rawGap * 0.5, maxLogicalSingTime);
                         } else if (rawGap > 400) {
-                            tok.duration = Math.min(rawGap * 0.7, maxLogicalSingTime);
+                            tok.duration = Math.min(rawGap * 0.8, maxLogicalSingTime);
                         } else {
                             tok.duration = rawGap;
                         }
                         
-                        if (tok.duration <= 0) tok.duration = 40; 
+                        // ABSOLUTE STRICT BOUND
+                        if (tok.duration > rawGap * 0.95) {
+                            tok.duration = rawGap * 0.95;
+                        }
+                        
+                        if (tok.duration <= 0) tok.duration = 20; 
                     }
                 }
             }
@@ -1781,13 +1800,13 @@
 
                     if (rawAge >= 0 && rawAge <= maxAllowedAge) {
                         dataAge = rawAge;
-                    } else if (rawAge < 0 && rawAge > -5000) {
-                        dataAge = 0;
                     } else {
-                        dataAge = 600; 
+                        // Knallharter Fix: Kein künstlicher 600ms Bullshit mehr, wenn der Timestamp out of sync ist!
+                        dataAge = 0; 
                     }
                 } else {
-                    dataAge = 600;
+                    // Knallharter Fix: Wenn kein Timestamp da ist, vertrauen wir rein auf die Latenz-Messung
+                    dataAge = 0; 
                 }
                 
                 apiProgress += dataAge + dynamicLatency;
@@ -1993,71 +2012,71 @@
                             const centerY = rect.top + (rect.height / 2);
                             shockwave.style.left = `${centerX}px`; shockwave.style.top = `${centerY}px`;
                             shockwave.classList.remove('trigger-emp'); void shockwave.offsetWidth; shockwave.classList.add('trigger-emp');
-                        }
-                        setTimeout(() => document.body.classList.remove('is-shaking'), 800);
-                        setTimeout(() => { if (shockwave) shockwave.classList.remove('trigger-emp'); }, 4000);
-                    }, 400); 
-                    
-                    setTimeout(() => {
-                        mediaCont.classList.remove('impact-media-in'); infoCont.classList.remove('impact-text-in'); lyricsCont.classList.remove('impact-lyrics-in');
-                        infoCont.style.animationDelay = '0s'; lyricsCont.style.animationDelay = '0s';
-                    }, 900); 
-                }, 650); 
-            } else {
-                applyDataChanges(0);
-            }
+                    }
+                    setTimeout(() => document.body.classList.remove('is-shaking'), 800);
+                    setTimeout(() => { if (shockwave) shockwave.classList.remove('trigger-emp'); }, 4000);
+                }, 400); 
+                
+                setTimeout(() => {
+                    mediaCont.classList.remove('impact-media-in'); infoCont.classList.remove('impact-text-in'); lyricsCont.classList.remove('impact-lyrics-in');
+                    infoCont.style.animationDelay = '0s'; lyricsCont.style.animationDelay = '0s';
+                }, 900); 
+            }, 650); 
+        } else {
+            applyDataChanges(0);
         }
+    }
 
-        let musicSocket = null;
-        function connectMusicSocket() {
-            if (musicSocket && musicSocket.readyState === WebSocket.OPEN) return; 
-            musicSocket = new WebSocket('wss://npc-api.aikins.xyz/v1/users/gamingpig/ws');
-            musicSocket.onopen = () => {
-                let pStart = performance.now();
-                fetch('https://npc-api.aikins.xyz/v1/users/gamingpig/now')
-                    .then(r => r.text())
-                    .then(text => text ? updateMusicUI(JSON.parse(text), (performance.now() - pStart) / 2) : null)
-                    .catch(err => console.error("Socket fetch error:", err));
-            };
-            musicSocket.onmessage = (e) => {
-                try {
-                    const msg = JSON.parse(e.data);
-                    if (msg.event === "update") updateMusicUI(msg.data, 20);
-                } catch(err) {}
-            };
-            musicSocket.onclose = () => setTimeout(connectMusicSocket, 3000); 
-        }
-
-        setInterval(() => {
-            if (musicSocket && musicSocket.readyState === WebSocket.OPEN) return;
+    let musicSocket = null;
+    function connectMusicSocket() {
+        if (musicSocket && musicSocket.readyState === WebSocket.OPEN) return; 
+        musicSocket = new WebSocket('wss://npc-api.aikins.xyz/v1/users/gamingpig/ws');
+        musicSocket.onopen = () => {
             let pStart = performance.now();
             fetch('https://npc-api.aikins.xyz/v1/users/gamingpig/now')
                 .then(r => r.text())
                 .then(text => text ? updateMusicUI(JSON.parse(text), (performance.now() - pStart) / 2) : null)
-                .catch(() => {});
-        }, 5000);
+                .catch(err => console.error("Socket fetch error:", err));
+        };
+        musicSocket.onmessage = (e) => {
+            try {
+                const msg = JSON.parse(e.data);
+                if (msg.event === "update") updateMusicUI(msg.data, 20);
+            } catch(err) {}
+        };
+        musicSocket.onclose = () => setTimeout(connectMusicSocket, 3000); 
+    }
 
-        document.addEventListener("visibilitychange", () => {
-            if (document.visibilityState === "visible") {
-                let pStart = performance.now();
-                fetch('https://npc-api.aikins.xyz/v1/users/gamingpig/now')
-                    .then(r => r.text())
-                    .then(text => text ? updateMusicUI(JSON.parse(text), (performance.now() - pStart) / 2) : null)
-                    .catch(err => console.error("Visibility fetch error:", err));
-                if (!musicSocket || musicSocket.readyState === WebSocket.CLOSED) connectMusicSocket();
-            }
-        });
+    setInterval(() => {
+        if (musicSocket && musicSocket.readyState === WebSocket.OPEN) return;
+        let pStart = performance.now();
+        fetch('https://npc-api.aikins.xyz/v1/users/gamingpig/now')
+            .then(r => r.text())
+            .then(text => text ? updateMusicUI(JSON.parse(text), (performance.now() - pStart) / 2) : null)
+            .catch(() => {});
+    }, 5000);
 
-        (async () => {
-            setLyricsStyle(currentLyricsStyle); 
-            await syncWorldwideTime();
-            if (trackIsPlaying && !isAnimating) {
-                isAnimating = true;
-                requestAnimationFrame(animateLoop);
-            }
-            connectMusicSocket();
-            setInterval(syncWorldwideTime, 600000);
-        })();
-    </script>
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+            let pStart = performance.now();
+            fetch('https://npc-api.aikins.xyz/v1/users/gamingpig/now')
+                .then(r => r.text())
+                .then(text => text ? updateMusicUI(JSON.parse(text), (performance.now() - pStart) / 2) : null)
+                .catch(err => console.error("Visibility fetch error:", err));
+            if (!musicSocket || musicSocket.readyState === WebSocket.CLOSED) connectMusicSocket();
+        }
+    });
+
+    (async () => {
+        setLyricsStyle(currentLyricsStyle); 
+        await syncWorldwideTime();
+        if (trackIsPlaying && !isAnimating) {
+            isAnimating = true;
+            requestAnimationFrame(animateLoop);
+        }
+        connectMusicSocket();
+        setInterval(syncWorldwideTime, 600000);
+    })();
+</script>
 </body>
 </html>
