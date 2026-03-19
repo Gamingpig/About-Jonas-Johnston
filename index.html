@@ -970,7 +970,13 @@
             syncSlider.value = liveSyncOffset;
             syncValueEl.innerText = liveSyncOffset;
             
+            // Nur die Zahl flüssig updaten beim Ziehen
             syncSlider.addEventListener('input', (e) => {
+                syncValueEl.innerText = e.target.value;
+            });
+
+            // Erst wenn du loslässt oder reinklickst wird schwer kalkuliert
+            syncSlider.addEventListener('change', (e) => {
                 liveSyncOffset = parseInt(e.target.value);
                 syncValueEl.innerText = liveSyncOffset;
                 syncLyricsUI(true, true); 
@@ -1166,10 +1172,13 @@
             const c = char.toLowerCase();
             // Intelligentere Gewichtung: Vokale werden am Zeilenende krasser gestretcht
             if (/[aeiouyæøåœäöüáéíóúàèìòùâêîôûãẽĩõũ]/.test(c)) {
-                return isLastWord ? 5.0 : 3.0; 
+                return isLastWord ? 6.0 : 2.5; 
             }
-            if (/[mnlrwjvszñç]/.test(c)) return 1.5; 
-            if (/[tkpbgdcqfxh]/.test(c)) return 0.5; 
+            // Sonoranten/Frikative (kann man summen/ziehen)
+            if (/[mnlrwjvszñç]/.test(c)) return 1.2; 
+            // Plosive (kurze harte Klicks)
+            if (/[tkpbgdcqfxh]/.test(c)) return 0.4; 
+            // Satzzeichen bringen keine Singzeit, das sind Pausen
             if (/[\n\r\t.,!? ]/.test(c)) return 0.0; 
             return 1.0; 
         }
@@ -1243,24 +1252,51 @@
                     tok.trailingSpace = tok.text.slice(tok.cleanText.length);
                     
                     let pureText = tok.cleanText.replace(/[.,!?]/g, '');
-                    tok.weight = 0;
+                    tok.rawWeight = 0;
                     tok.isPhraseEnd = /[.,!?]$/.test(tok.cleanText) || (idx === line.tokens.length - 1);
 
                     for (let c of pureText) {
-                        tok.weight += getCharWeight(c, tok.isPhraseEnd, /[aeiouy]/.test(c.toLowerCase()));
+                        tok.rawWeight += getCharWeight(c, tok.isPhraseEnd, /[aeiouy]/.test(c.toLowerCase()));
                     }
-                    if (tok.weight === 0) tok.weight = 0.5; 
+                    if (tok.rawWeight === 0) tok.rawWeight = 0.5; 
+                    
+                    // KNALLHARTER FIX: Nicht-lineare Skalierung. Lange Wörter werden komprimiert!
+                    tok.weight = Math.pow(tok.rawWeight, 0.75);
                     
                     lineWeight += tok.weight;
                 });
 
                 if (!line.hasWordTimings && line.tokens.length > 0) {
-                    // Proportionale Verteilung anstatt fester Char-Time
-                    let maxAvailableTime = Math.min(timeToNextLine * 0.95, line.tokens.length * 800); 
-                    let naturalSingingTime = lineWeight * 60; 
-                    
-                    let totalAllocatedTime = Math.min(naturalSingingTime * 1.5, maxAvailableTime);
-                    if (totalAllocatedTime > maxAvailableTime) totalAllocatedTime = maxAvailableTime;
+                    let maxAvailableTime = timeToNextLine * 0.95; 
+                    if (maxAvailableTime > 15000) maxAvailableTime = 15000;
+
+                    // Erster Pass: Berechne die komplett rohe Wunsch-Zeit inkl. aller dynamischen Pausen!
+                    let totalRawTime = 0;
+                    line.tokens.forEach((tok) => {
+                        tok.rawDuration = tok.weight * 80;
+                        tok.rawPause = 30;
+                        let maxGap = Math.min(timeToNextLine, 8000);
+                        let dynamicPauseBase = maxGap * 0.05;
+
+                        if (tok.isPhraseEnd) {
+                            if (/[.!?]$/.test(tok.cleanText)) {
+                                tok.rawPause = Math.max(400, Math.min(dynamicPauseBase * 2.5, 1500));
+                            } else if (/[,;:]$/.test(tok.cleanText)) {
+                                tok.rawPause = Math.max(200, Math.min(dynamicPauseBase * 1.5, 800));
+                            } else {
+                                tok.rawPause = Math.max(100, Math.min(dynamicPauseBase * 0.8, 400));
+                            }
+                        }
+                        totalRawTime += tok.rawDuration + tok.rawPause;
+                    });
+
+                    // Zweiter Pass: Strikte Skalierung, damit die Gesamtzeit niemals timeToNextLine sprengt
+                    let timeScale = 1.0;
+                    if (totalRawTime > maxAvailableTime) {
+                        timeScale = maxAvailableTime / totalRawTime; // Knallhart komprimieren
+                    } else {
+                        timeScale = Math.min(maxAvailableTime / totalRawTime, 1.25); // Sanft stretchen
+                    }
                     
                     let currentOffsetMs = line.timeMs;
                     
@@ -1268,11 +1304,19 @@
                         let tok = line.tokens[j];
                         tok.timeMs = currentOffsetMs;
                         
-                        let rawDuration = (tok.weight / lineWeight) * totalAllocatedTime;
+                        tok.duration = tok.rawDuration * timeScale;
+                        let microPause = tok.rawPause * timeScale;
+
+                        // Vocal-Hold: Nur wenn das Wort mit einem Vokal endet und wir noch echten Puffer haben
+                        if (j === line.tokens.length - 1 && totalRawTime * timeScale < maxAvailableTime) {
+                            let remainingExtra = maxAvailableTime - (totalRawTime * timeScale);
+                            if (/[aeiouyæøåœäöüáéíóúàèìòùâêîôûãẽĩõũ][^a-zA-Z]*$/.test(tok.cleanText.toLowerCase())) {
+                                tok.duration += Math.min(remainingExtra * 0.6, 1200); 
+                            }
+                        }
                         
-                        let microPause = tok.isPhraseEnd ? Math.min(200, rawDuration * 0.2) : Math.min(40, rawDuration * 0.1);
-                        tok.duration = rawDuration - microPause;
-                        if(tok.duration < 20) tok.duration = 20;
+                        // KEIN HARD-LIMIT MEHR, DAS DIE GESAMTZEIT SPRENGT!
+                        // Wenn der Part extrem schnell ist, darf tok.duration auch unter 30ms fallen.
                         
                         currentOffsetMs += tok.duration + microPause; 
                     }
@@ -1426,11 +1470,15 @@
                         let currentTokWeightPassed = 0;
                         
                         for(let cIdx=0; cIdx<tokLen; cIdx++) {
-                            let cWeight = getCharWeight(tok.cleanText[cIdx]);
-                            if (cWeight === 0 && tok.weight > 0) cWeight = tok.weight * 0.05; 
+                            let cChar = tok.cleanText[cIdx];
+                            let cWeight = 0;
+                            if (!/[.,!?]/.test(cChar)) {
+                                cWeight = getCharWeight(cChar, tok.isPhraseEnd, /[aeiouy]/.test(cChar.toLowerCase()));
+                            }
+                            if (cWeight === 0 && tok.rawWeight > 0) cWeight = tok.rawWeight * 0.05; 
                             
-                            let charStartRatio = tok.weight > 0 ? (currentTokWeightPassed / tok.weight) : 0;
-                            let charEndRatio = tok.weight > 0 ? ((currentTokWeightPassed + cWeight) / tok.weight) : 1;
+                            let charStartRatio = tok.rawWeight > 0 ? (currentTokWeightPassed / tok.rawWeight) : 0;
+                            let charEndRatio = tok.rawWeight > 0 ? ((currentTokWeightPassed + cWeight) / tok.rawWeight) : 1;
                             
                             const charSpan = document.getElementById(`char-${idx}-${wIdx}-${cIdx}`);
                             if(charSpan) {
@@ -1862,12 +1910,20 @@
 
                 const searchQuery = encodeURIComponent(`${data.track.title} ${rawArtist}`.trim());
                 
-                if (!availableLinks.spotify) availableLinks.spotify = `https://open.spotify.com/search/${searchQuery}`;
-                if (!availableLinks.applemusic) availableLinks.applemusic = `https://music.apple.com/search?term=${searchQuery}`;
-                if (!availableLinks.youtube) availableLinks.youtube = `https://music.youtube.com/search?q=${searchQuery}`;
-                if (!availableLinks.soundcloud) availableLinks.soundcloud = `https://soundcloud.com/search?q=${searchQuery}`;
-                if (!availableLinks.deezer) availableLinks.deezer = `https://www.deezer.com/search/${searchQuery}`;
-                if (!availableLinks.tidal) availableLinks.tidal = `https://tidal.com/search?q=${searchQuery}`;
+                const linkKeys = Object.keys(availableLinks).map(k => k.toLowerCase());
+                const hasSpotify = linkKeys.some(k => k.includes('spotify'));
+                const hasApple = linkKeys.some(k => k.includes('apple'));
+                const hasYT = linkKeys.some(k => k.includes('youtube') || k.includes('yt'));
+                const hasSC = linkKeys.some(k => k.includes('soundcloud'));
+                const hasDeezer = linkKeys.some(k => k.includes('deezer'));
+                const hasTidal = linkKeys.some(k => k.includes('tidal'));
+
+                if (!hasSpotify) availableLinks.spotify = `https://open.spotify.com/search/${searchQuery}`;
+                if (!hasApple) availableLinks.applemusic = `https://music.apple.com/search?term=${searchQuery}`;
+                if (!hasYT) availableLinks.youtube = `https://music.youtube.com/search?q=${searchQuery}`;
+                if (!hasSC) availableLinks.soundcloud = `https://soundcloud.com/search?q=${searchQuery}`;
+                if (!hasDeezer) availableLinks.deezer = `https://www.deezer.com/search/${searchQuery}`;
+                if (!hasTidal) availableLinks.tidal = `https://tidal.com/search?q=${searchQuery}`;
 
                 const serviceStyles = {
                     spotify: { name: 'Spotify', bg: '#1DB954' },
