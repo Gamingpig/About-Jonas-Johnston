@@ -1162,9 +1162,12 @@
             }
         }
 
-        function getCharWeight(char) {
+        function getCharWeight(char, isLastWord, isVowel) {
             const c = char.toLowerCase();
-            if (/[aeiouyæøåœäöüáéíóúàèìòùâêîôûãẽĩõũ]/.test(c)) return 3.5; 
+            // Intelligentere Gewichtung: Vokale werden am Zeilenende krasser gestretcht
+            if (/[aeiouyæøåœäöüáéíóúàèìòùâêîôûãẽĩõũ]/.test(c)) {
+                return isLastWord ? 5.0 : 3.0; 
+            }
             if (/[mnlrwjvszñç]/.test(c)) return 1.5; 
             if (/[tkpbgdcqfxh]/.test(c)) return 0.5; 
             if (/[\n\r\t.,!? ]/.test(c)) return 0.0; 
@@ -1229,20 +1232,6 @@
 
             parsedLyrics.sort((a, b) => a.timeMs - b.timeMs);
 
-            let totalCharsForAvg = 0;
-            let totalTimeForAvg = 0;
-            for (let i = 0; i < parsedLyrics.length - 1; i++) {
-                let line = parsedLyrics[i];
-                let nextLine = parsedLyrics[i+1];
-                let diff = nextLine.timeMs - line.timeMs;
-                if (diff > 0 && diff < 4000 && line.text.length > 0) {
-                    totalTimeForAvg += diff;
-                    totalCharsForAvg += line.text.length;
-                }
-            }
-            let avgCharTime = (totalCharsForAvg > 0) ? (totalTimeForAvg / totalCharsForAvg) : 70;
-            avgCharTime = Math.min(Math.max(avgCharTime, 40), 100); 
-
             for (let i = 0; i < parsedLyrics.length; i++) {
                 let line = parsedLyrics[i];
                 let nextLine = parsedLyrics[i+1];
@@ -1255,24 +1244,23 @@
                     
                     let pureText = tok.cleanText.replace(/[.,!?]/g, '');
                     tok.weight = 0;
-                    for (let c of pureText) tok.weight += getCharWeight(c);
+                    tok.isPhraseEnd = /[.,!?]$/.test(tok.cleanText) || (idx === line.tokens.length - 1);
+
+                    for (let c of pureText) {
+                        tok.weight += getCharWeight(c, tok.isPhraseEnd, /[aeiouy]/.test(c.toLowerCase()));
+                    }
                     if (tok.weight === 0) tok.weight = 0.5; 
                     
-                    tok.isPhraseEnd = /[.,!?]$/.test(tok.cleanText) || (idx === line.tokens.length - 1);
                     lineWeight += tok.weight;
                 });
 
                 if (!line.hasWordTimings && line.tokens.length > 0) {
-                    let naturalSingingTime = lineWeight * avgCharTime;
-                    let maxAvailableTime = timeToNextLine * 0.85; 
+                    // Proportionale Verteilung anstatt fester Char-Time
+                    let maxAvailableTime = Math.min(timeToNextLine * 0.95, line.tokens.length * 800); 
+                    let naturalSingingTime = lineWeight * 60; 
                     
-                    let scale = 1.0;
-                    if (naturalSingingTime > maxAvailableTime) {
-                        scale = maxAvailableTime / naturalSingingTime; 
-                    } else {
-                        let stretch = maxAvailableTime / naturalSingingTime;
-                        scale = Math.min(stretch, 1.2); 
-                    }
+                    let totalAllocatedTime = Math.min(naturalSingingTime * 1.5, maxAvailableTime);
+                    if (totalAllocatedTime > maxAvailableTime) totalAllocatedTime = maxAvailableTime;
                     
                     let currentOffsetMs = line.timeMs;
                     
@@ -1280,10 +1268,11 @@
                         let tok = line.tokens[j];
                         tok.timeMs = currentOffsetMs;
                         
-                        tok.duration = tok.weight * avgCharTime * scale;
+                        let rawDuration = (tok.weight / lineWeight) * totalAllocatedTime;
                         
-                        let microPause = tok.isPhraseEnd ? 200 : 30; 
-                        microPause *= scale; 
+                        let microPause = tok.isPhraseEnd ? Math.min(200, rawDuration * 0.2) : Math.min(40, rawDuration * 0.1);
+                        tok.duration = rawDuration - microPause;
+                        if(tok.duration < 20) tok.duration = 20;
                         
                         currentOffsetMs += tok.duration + microPause; 
                     }
