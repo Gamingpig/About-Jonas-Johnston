@@ -102,6 +102,24 @@
         body.low-end #status-dot { display: block !important; }
         body.low-end .eq-bars { display: none !important; }
 
+        /* FIX FÜR LOW-END MODUS: Da Animationen deaktiviert sind, blieben die Fenster unsichtbar (opacity: 0). 
+           Hier erzwingen wir knallhart die Sichtbarkeit für alle Popups! */
+        body.low-end .lyrics-open #lyrics-overlay,
+        body.low-end .modal-opening .modal-content,
+        body.low-end .picker-opening,
+        body.low-end .settings-opening,
+        body.low-end .tutorial-opening,
+        body.low-end .dashboard-opening #main-music-card {
+            opacity: 1 !important;
+            visibility: visible !important;
+            transform: none !important;
+        }
+
+        /* Im Performance Mode nehmen wir massives Schwarz/Slate, da Blur deaktiviert ist */
+        body.low-end .lyrics-open #lyrics-overlay {
+            background-color: #020617 !important; 
+        }
+
         /* FIX: Sanfter Text Shadow im Light Mode, damit sich der Text vom Glas abhebt */
         html:not(.dark) body.liquid-glass-active main p,
         html:not(.dark) body.liquid-glass-active main h1,
@@ -137,7 +155,6 @@
         body.liquid-glass-active .glass-card {
             position: relative;
             overflow: hidden; 
-            /* FIX: Mehr weiß (0.5, 0.6), damit das Glas milchig und der Text lesbar wird */
             background: linear-gradient(120deg, 
                 rgba(255, 255, 255, 0.5) 0%, 
                 rgba(255, 255, 255, 0.15) 35%, 
@@ -149,13 +166,11 @@
             border: 1px solid rgba(255, 255, 255, 0.6) !important;
             border-top: 1px solid rgba(255, 255, 255, 0.9) !important; /* Extreme Lichtkante oben */
             border-left: 1px solid rgba(255, 255, 255, 0.7) !important;
-            /* FIX: Saturate runter auf 120%, damit die Blobs nicht durchbrennen */
             -webkit-backdrop-filter: blur(40px) saturate(120%) !important;
             backdrop-filter: blur(40px) saturate(120%) !important;
             animation: card-liquid-idle 6s ease-in-out infinite alternate !important;
             transform: scale(1) translateY(0);
             will-change: transform, border-radius; /* FIX: filter und box-shadow entfernt, um Mobile-VRAM-Exhaustion zu verhindern */
-            /* FIX: min-height und max-width für smoothes Fensterwachstum in der Transition ergänzt */
             transition: transform 0.8s var(--apple-spring), box-shadow 0.8s var(--apple-spring), border-radius 0.6s var(--apple-ease), filter 0.6s var(--apple-ease), background-color 0.4s ease, min-height 1s var(--liquid-fluid), max-width 1s var(--liquid-fluid), padding 1s var(--liquid-fluid) !important;
         }
         
@@ -172,6 +187,18 @@
             border-color: rgba(255, 255, 255, 0.08) !important;
             -webkit-backdrop-filter: blur(40px) saturate(200%) brightness(1.15) !important;
             backdrop-filter: blur(40px) saturate(200%) brightness(1.15) !important;
+        }
+
+        /* MOBILE GPU LAGG FIX FÜR ANDROID CHROMIUM (Pixel 8 Pro) */
+        @media (max-width: 768px) {
+            body.liquid-glass-active .glass-card {
+                -webkit-backdrop-filter: blur(25px) saturate(120%) !important;
+                backdrop-filter: blur(25px) saturate(120%) !important;
+            }
+            .dark body.liquid-glass-active .glass-card {
+                -webkit-backdrop-filter: blur(25px) saturate(200%) brightness(1.15) !important;
+                backdrop-filter: blur(25px) saturate(200%) brightness(1.15) !important;
+            }
         }
 
         /* Dynamisches Spotlight (Glare), das der Maus/dem Finger folgt */
@@ -405,7 +432,7 @@
         }
 
 
-        /* Apple Aura Background - EXTREME FARBVERMISCHUNG (APPLE MESH GRADIENT) */
+        /* Apple Aura Background - EXTREME FARBVERMISCHUNG OHNE VRAM LAG! */
         #liquid-blobs {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; overflow: hidden; pointer-events: none;
             opacity: 0; transition: opacity 1.5s var(--apple-ease); display: none;
@@ -416,30 +443,34 @@
         
         .blob-container {
             position: absolute; width: 100%; height: 100%;
-            /* Massiver Blur für nahtlose, sirupartige Vermischung der Farben */
-            filter: blur(120px) saturate(150%); 
-            /* FIX: Opacity runtergeschraubt, damit der Text im Light Mode nicht überblendet wird */
-            opacity: 0.3; 
+            opacity: 0.4; /* Stark reduziert, damit der Text lesbar bleibt */
             transform: translate3d(0,0,0);
-            backface-visibility: hidden; /* FIX: Erzwingt GPU und verhindert WebKit-Flackern bei extremen Blurs */
+            backface-visibility: hidden; /* FIX: Erzwingt GPU und verhindert WebKit-Flackern */
+            will-change: transform; /* Hardware Acceleration Override für Mobile GPUs */
             /* Langsame Rotation des gesamten Containers für ständigen Farbwechsel */
             animation: container-rotate 40s linear infinite;
         }
         .dark .blob-container { 
-            opacity: 0.25; /* Im Darkmode noch weiter runter für starken Kontrast */
+            opacity: 0.35; /* Im Darkmode noch weiter runter für starken Kontrast */
         }
         
+        /* ABSOLUTER GAMECHANGER GEGEN LAGG:
+           Wir benutzen keine "echten" HTML Kreise mit filter: blur() mehr!
+           Blur frisst auf Android die GPU auf.
+           Wir erzeugen den unscharfen Kreis direkt als nativen CSS Farbverlauf.
+           Das kostet 0% Rechenleistung und sieht exakt gleich flüssig aus.
+        */
         .blob {
             position: absolute; 
-            will-change: transform, border-radius;
+            will-change: transform;
             animation: blob-morph 20s ease-in-out infinite alternate;
         }
         
-        /* Hochgesättigte, lebendige Apple-Farben */
-        .blob-1 { top: -10%; left: -10%; width: 70vw; height: 70vw; background: #ff0080; animation-delay: 0s; animation-duration: 25s; }
-        .blob-2 { top: 20%; right: -20%; width: 80vw; height: 80vw; background: #7928ca; animation-delay: -5s; animation-duration: 30s; animation-direction: alternate-reverse; }
-        .blob-3 { bottom: -20%; left: 10%; width: 70vw; height: 70vw; background: #00d2ff; animation-delay: -10s; animation-duration: 22s; }
-        .blob-4 { top: 30%; left: 30%; width: 60vw; height: 60vw; background: #ff4d4d; animation-delay: -15s; animation-duration: 28s; animation-direction: alternate-reverse; }
+        /* Hochgesättigte, lebendige Apple-Farben als softe Verläufe (Zero-Lag Blur) */
+        .blob-1 { top: -10%; left: -10%; width: 70vw; height: 70vw; background: radial-gradient(circle, rgba(255,0,128,1) 0%, rgba(255,0,128,0) 70%); animation-delay: 0s; animation-duration: 25s; }
+        .blob-2 { top: 20%; right: -20%; width: 80vw; height: 80vw; background: radial-gradient(circle, rgba(121,40,202,1) 0%, rgba(121,40,202,0) 70%); animation-delay: -5s; animation-duration: 30s; animation-direction: alternate-reverse; }
+        .blob-3 { bottom: -20%; left: 10%; width: 70vw; height: 70vw; background: radial-gradient(circle, rgba(0,210,255,1) 0%, rgba(0,210,255,0) 70%); animation-delay: -10s; animation-duration: 22s; }
+        .blob-4 { top: 30%; left: 30%; width: 60vw; height: 60vw; background: radial-gradient(circle, rgba(255,77,77,1) 0%, rgba(255,77,77,0) 70%); animation-delay: -15s; animation-duration: 28s; animation-direction: alternate-reverse; }
         
         @keyframes container-rotate {
             from { transform: rotate(0deg) scale(1.2); }
@@ -447,9 +478,9 @@
         }
 
         @keyframes blob-morph {
-            0% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
-            50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; transform: translate3d(10vw, 8vh, 0) rotate(90deg) scale(1.15); }
-            100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; transform: translate3d(-8vw, 12vh, 0) rotate(180deg) scale(0.9); }
+            0% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+            50% { transform: translate3d(10vw, 8vh, 0) rotate(90deg) scale(1.15); }
+            100% { transform: translate3d(-8vw, 12vh, 0) rotate(180deg) scale(0.9); }
         }
 
         body.low-end #liquid-blobs { display: none !important; animation: none !important; }
@@ -657,7 +688,7 @@
     
     <!-- UI CONTROLS -->
     <!-- FIX: Verschachtelten backdrop-blur-sm hier entfernt, da die inneren Buttons schon blur haben. Vermeidet Mobile Glitches -->
-    <div id="ui-controls" class="fixed top-2 right-2 xs:top-4 xs:right-4 sm:top-6 sm:right-6 z-[110] flex items-center gap-1.5 sm:gap-3 bg-white/10 dark:bg-black/10 p-1 rounded-2xl sm:rounded-3xl border border-white/20 dark:border-slate-800/50 shadow-sm">
+    <div id="ui-controls" class="fixed top-2 right-2 xs:top-4 xs:right-4 sm:top-6 sm:right-6 z-[110] flex items-center gap-1.5 sm:gap-3 bg-white/10 dark:bg-black/10 backdrop-blur-sm p-1 rounded-2xl sm:rounded-3xl border border-white/20 dark:border-slate-800/50 shadow-sm">
         <button id="liquid-glass-toggle" aria-label="Liquid Glass umschalten" class="group p-2 sm:p-3 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl shadow-lg rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-700 hover:ring-2 hover:ring-cyan-500 transition-all active:scale-90" title="Apple Liquid Glass Modus">
             <svg id="liquid-glass-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500 transition-colors group-hover:text-cyan-500 sm:w-6 sm:h-6"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
         </button>
@@ -852,21 +883,22 @@
                         <div id="ambilight-glow"></div>
 
                         <div id="particles-container">
-                            <div class="particle p1"></div><div class="particle p2"></div>
-                            <div class="particle p3"></div><div class="particle p4"></div>
-                            <div class="particle p5"></div><div class="particle p6"></div>
-                            <div class="particle p7"></div><div class="particle p8"></div>
-                            <div class="particle p1" style="left:15%; animation-delay:1.2s"></div>
-                            <div class="particle p3" style="left:65%; animation-delay:2.7s"></div>
-                            <div class="particle p5" style="left:85%; animation-delay:0.3s"></div>
-                            <div class="particle p8" style="left:45%; animation-delay:3.1s"></div>
-                        </div>
+                        <div class="particle p1"></div><div class="particle p2"></div>
+                        <div class="particle p3"></div><div class="particle p4"></div>
+                        <div class="particle p5"></div><div class="particle p6"></div>
+                        <div class="particle p7"></div><div class="particle p8"></div>
+                        <div class="particle p1" style="left:15%; animation-delay:1.2s"></div>
+                        <div class="particle p3" style="left:65%; animation-delay:2.7s"></div>
+                        <div class="particle p5" style="left:85%; animation-delay:0.3s"></div>
+                        <div class="particle p8" style="left:45%; animation-delay:3.1s"></div>
+                    </div>
 
-                        <!-- Das Lyrics Fenster -->
-                        <div id="lyrics-overlay" class="absolute inset-0 bg-black/50 rounded-[1.5rem] xxs:rounded-3xl md:rounded-[3rem] flex-col p-2 xxs:p-3 xs:p-6 md:p-8 z-40 transition-all duration-500 opacity-0 pointer-events-none flex border border-white/10 invisible">
-                            
-                            <div class="flex items-center justify-between gap-1.5 xxs:gap-2 sm:gap-4 mb-3 xxs:mb-4 sm:mb-6 shrink-0 w-full bg-white/10 p-1.5 xxs:p-2 xs:p-3 sm:p-4 rounded-lg xxs:rounded-xl sm:rounded-2xl border border-white/10 relative z-[100]">
-                                <div class="flex items-center gap-1.5 xxs:gap-2 sm:gap-3 min-w-0 flex-1">
+                    <!-- Das Lyrics Fenster -->
+                    <!-- FIX: bg-black/50 gegen sattes bg-slate-950/85 ausgetauscht und backdrop-blur-2xl hinzugefügt für brutale Lesbarkeit! -->
+                    <div id="lyrics-overlay" class="absolute inset-0 bg-slate-950/85 backdrop-blur-2xl rounded-[1.5rem] xxs:rounded-3xl md:rounded-[3rem] flex-col p-2 xxs:p-3 xs:p-6 md:p-8 z-40 transition-all duration-500 opacity-0 pointer-events-none flex border border-white/10 invisible">
+                        
+                        <div class="flex items-center justify-between gap-1.5 xxs:gap-2 sm:gap-4 mb-3 xxs:mb-4 sm:mb-6 shrink-0 w-full bg-white/10 p-1.5 xxs:p-2 xs:p-3 sm:p-4 rounded-lg xxs:rounded-xl sm:rounded-2xl border border-white/10 relative z-[100]">
+                            <div class="flex items-center gap-1.5 xxs:gap-2 sm:gap-3 min-w-0 flex-1">
                                     <img id="lyrics-mini-art" src="" alt="Album Art" class="w-6 h-6 xxs:w-8 xxs:h-8 sm:w-10 sm:h-10 rounded shadow-md object-cover shrink-0">
                                     <div class="text-left min-w-0">
                                         <p id="lyrics-mini-title" class="text-[10px] xxs:text-xs sm:text-sm font-bold text-white truncate">Titel</p>
@@ -1065,6 +1097,22 @@
                     </div>
                 </a>
             </div>
+
+            <!-- Lukas' TikTok -->
+            <div class="glass-card p-3 xxs:p-5 xs:p-6 sm:p-8 rounded-[1rem] xxs:rounded-[1.5rem] sm:rounded-[2.5rem] group overflow-hidden relative border border-slate-200 dark:border-slate-800">
+                <div class="flex items-center gap-2 xxs:gap-3 sm:gap-5 mb-2 xxs:mb-4 sm:mb-6">
+                    <div class="p-1.5 xxs:p-2 sm:p-3 bg-pink-500/10 text-pink-600 dark:text-pink-500 rounded-lg xxs:rounded-xl sm:rounded-2xl group-hover:rotate-12 transition-transform">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="xxs:w-6 xxs:h-6 sm:w-8 sm:h-8"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>
+                    </div>
+                    <h2 class="text-base xxs:text-xl xs:text-2xl sm:text-3xl font-bold">Lukas' TikTok</h2>
+                </div>
+                <a href="https://www.tiktok.com/@luk.ki65?_r=1&_t=ZG-94uLguANFrc" target="_blank" rel="noopener noreferrer" class="group/link inline-flex items-center gap-1.5 xxs:gap-2 sm:gap-3 text-sm xxs:text-base sm:text-xl text-blue-500 hover:text-blue-600 font-bold transition-all">
+                    Hier geht's zu Lukas' Kanal
+                    <div class="p-0.5 xxs:p-1 sm:p-1.5 bg-blue-500/10 rounded xxs:rounded-md sm:rounded-lg group-hover/link:translate-x-1 transition-transform">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="xxs:w-4 xxs:h-4 sm:w-5 sm:h-5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                    </div>
+                </a>
+            </div>
         </div>
 
         <footer class="mt-12 xxs:mt-20 sm:mt-40 text-center reveal">
@@ -1172,7 +1220,7 @@
             status: { title: "Ausbildung & Fokus", content: "Ich absolviere aktuell meine Ausbildung zum Fachinformatiker für Systemintegration. Technik und Systeme sind meine Welt. Ich liebe es, Server aufzusetzen, Netzwerke zu konfigurieren und alles am Laufen zu halten. Mein Hyperfokus hilft mir dabei, tief in komplexe IT-Strukturen einzutauchen und Fehler zu finden, bevor sie zum Problem werden." },
             background: { title: "Hintergrund & Weg", content: "Ich bin 19 Jahre alt und lebe in einer Jugendhilfeeinrichtung. Das hat mich früh gelehrt, unabhängig zu sein und meinen eigenen Weg zu gehen. Ich sehe Herausforderungen nicht als Hindernis, sondern als Chance, zu wachsen und meine eigene Zukunft zu gestalten." },
             freizeit: { title: "Gaming & Content", content: "Wenn die Server laufen, bin ich bei Forza Horizon 5 anzutreffen. Ich streame live auf TikTok und teile meine Leidenschaft für Gaming und Technik mit der Community. Es geht mir um den Vibe, den Austausch und das Meistern neuer Challenges." },
-            menschen: { title: "Meine Wahlfamilie", content: "Da ich ohne Eltern aufgewachsen bin, sind Freunde meine gewählte Familie. Loyalität und Vertrauen stehen für mich an erster Stelle. Mein neuer Anker ist Danilo, aber Tom und Lukas bleiben es mit ihm gemeinsam – wir gehen den Weg zusammen." },
+            menschen: { title: "Meine Wahlfamilie", content: "Da ich ohne Eltern aufgewachsen bin, sind Freunde meine gewählte Familie. Loyalität und Vertrauen stehen für mich an erster Stelle. Mein neuer Anker ist Danilo, aber Tom bleibt es mit ihm gemeinsam – wir gehen den Weg zusammen." },
             techstack: { title: "Tech Stack & Skills", content: "Als angehender Systemintegrator kenne ich mich mit dem Setup und Wartung von IT-Infrastrukturen aus. Dazu gehören Windows Server, Linux-Distributionen, generelle Netzwerkkonfigurationen und intensives Hardware-Troubleshooting. Egal ob Laptops, PCs oder Smartphones – wenn was defekt ist, finde ich den Fehler." },
             setup: { title: "Mein Audio Setup", content: "Guter Sound ist ein absolutes Muss beim Zocken oder Musikhören. An meinem Rechner nutze ich die Beyerdynamic DT 770 Pro (80 Ohm) Studio-Kopfhörer für extrem klaren Klang und geschlossene Isolation. Wenn ich die Bude beschallen will, läuft das über meinen Teufel Rockster Cross Bluetooth-Speaker, der einfach heftig reinhaut." },
             labor: { title: "Labor & Projekte", content: "Meine persönliche Spielwiese. Hier baue ich komplexe Docker-Umgebungen, administriere Webserver und setze eigene APIs auf. Ich teste Netzwerkarchitekturen bis an ihre Grenzen und automatisiere Prozesse, um mein Setup stetig auf das nächste Level zu pushen." },
