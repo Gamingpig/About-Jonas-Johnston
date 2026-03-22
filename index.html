@@ -51,7 +51,8 @@
 
         html, body {
             max-width: 100vw;
-            overflow-x: clip; 
+            overflow-x: hidden; 
+            -webkit-overflow-scrolling: touch; /* Mobile Scroll Fix */
         }
 
         body {
@@ -221,8 +222,8 @@
             }
         }
 
-        /* 🎈 APPLE SQUISH AUF KLICK (Das funktioniert auch auf Mobile als Touch-Feedback) 🎈 */
-        body.liquid-glass-active .glass-card:not(#main-music-card):not(#mini-player-toggle):active {
+        /* 🎈 APPLE SQUISH AUF KLICK (JS Gesteuert für Mobile-Scroll-Fix) 🎈 */
+        body.liquid-glass-active .glass-card.is-squished:not(#main-music-card):not(#mini-player-toggle) {
             transform: scale(0.92) translateY(4px) !important;
             border-radius: 40px !important;
             transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-radius 0.2s !important;
@@ -1337,7 +1338,7 @@
             setTimeout(() => {
                 modalOverlay.classList.add('hidden');
                 modalOverlay.classList.remove('flex', 'modal-closing');
-                document.body.style.overflow = 'auto';
+                document.body.style.overflow = ''; // FIX: Stellt Scrollen komplett wieder her
             }, 850); 
         });
 
@@ -2509,15 +2510,27 @@
                 if(window.matchMedia("(hover: none)").matches) {
                     card.style.setProperty('--glare-opacity', '1');
                 }
+                card.classList.add('is-squished');
                 updateSpotlight(e.touches[0].clientX, e.touches[0].clientY);
             }, {passive: true});
             
             card.addEventListener('touchmove', (e) => {
+                card.classList.remove('is-squished'); // FIX SCROLLING: Entfernt den Squish beim Swipen!
                 updateSpotlight(e.touches[0].clientX, e.touches[0].clientY);
             }, {passive: true});
             
-            card.addEventListener('touchend', resetSpotlight);
-            card.addEventListener('touchcancel', resetSpotlight);
+            card.addEventListener('touchend', (e) => {
+                card.classList.remove('is-squished');
+                resetSpotlight();
+            });
+            card.addEventListener('touchcancel', (e) => {
+                card.classList.remove('is-squished');
+                resetSpotlight();
+            });
+
+            // Desktop active state JS
+            card.addEventListener('mousedown', () => card.classList.add('is-squished'));
+            card.addEventListener('mouseup', () => card.classList.remove('is-squished'));
         });
 
         (async () => {
